@@ -1,8 +1,6 @@
 package fsm
 
 import (
-	"fmt"
-
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/logger"
@@ -21,13 +19,13 @@ func (state *State) fire(event string, variables *Variables) (types.Option[strin
 	if !containsEvent {
 		return types.None[string](), mode.DEADLOCK
 	}
-	state.logger.Debug(fmt.Sprintf("Checking %d edge(s) ...", len(arr)))
+	state.logger.Debugf("Checking %d edge(s) ...", len(arr))
 	for _, edge := range arr {
 		res, newMode := edge.checkCondition(variables)
 		if res.IsSome() {
 			return res, mode.CONTINUE
 		}
-		if newMode == mode.TERMINATED {
+		if newMode == mode.TERMINATE {
 			return res, newMode
 		}
 	}
@@ -49,10 +47,6 @@ func (state *State) GetEdgeTriggers() []string {
 
 func (state *State) GetName() string {
 	return state.name
-}
-
-func (state State) ToString() string {
-	return fmt.Sprintf("{ name: %s, transitions: %v }", state.name, state.transitions)
 }
 
 type StateBuilder struct {

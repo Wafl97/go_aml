@@ -1,7 +1,6 @@
 package fsm
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/Wafl97/go_aml/util/logger"
@@ -45,7 +44,7 @@ func handleModelName(line string, lineNumber int, builder *FsmBuilder) {
 	modelName, containsModelName := strings.CutPrefix(line, "model ")
 	if containsModelName {
 		if len(modelName) == 0 {
-			log.Warn(fmt.Sprintf("No model name given on line %d", lineNumber+1))
+			log.Warnf("No model name given on line %d", lineNumber+1)
 			return
 		}
 		builder.modelName = modelName
@@ -59,7 +58,7 @@ func handleStateDef(line string, lineNumber int, builder *FsmBuilder, lines *[]s
 	}
 	state = strings.TrimSpace(strings.Trim(state, "{"))
 	if len(state) == 0 {
-		log.Warn(fmt.Sprintf("No name given to state on line %d ... skipping", lineNumber+1))
+		log.Warnf("No name given to state on line %d ... skipping", lineNumber+1)
 		return lineNumber
 	}
 	iterated := 0
@@ -73,12 +72,12 @@ func handleStateDef(line string, lineNumber int, builder *FsmBuilder, lines *[]s
 			checkLineIsTransition(line, iterated, sb, state)
 		}
 		if len(sb.transitions) == 0 {
-			log.Warn(fmt.Sprintf("No transitions provided for state %s on line %d", state, lineNumber+1))
+			log.Warnf("No valid transitions provided for state %s on line %d", state, lineNumber+1)
 		}
 	})
 	if init == "init " {
 		builder.Initial(state)
-		log.Debug(fmt.Sprintf("setting initial state %s", state))
+		log.Debugf("setting initial state %s", state)
 	}
 	return iterated
 }
@@ -91,17 +90,17 @@ func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state 
 	event = strings.TrimSpace(event)
 	nextState = strings.TrimSpace(nextState)
 	if len(event) == 0 {
-		log.Warn(fmt.Sprintf("Bad transition on line %d, no event provided ... skipping", lineNumber+1))
+		log.Warnf("Bad transition on line %d, no event provided ... skipping", lineNumber+1)
 		return
 	}
 	if len(nextState) == 0 {
-		log.Warn(fmt.Sprintf("Bad transition on line %d, no destination state provided ... skipping", lineNumber+1))
+		log.Warnf("Bad transition on line %d, no destination state provided ... skipping", lineNumber+1)
 		return
 	}
 	sb.When(event, func(eb *EdgeBuilder) {
 		eb.Then(nextState)
 	})
-	log.Debug(fmt.Sprintf("%s on %s goto %s ... done", state, event, nextState))
+	log.Debugf("%s on %s goto %s ... done", state, event, nextState)
 }
 
 func checkLineIsTermination(line string, lineNumber int, sb *StateBuilder, state string) {
@@ -111,9 +110,9 @@ func checkLineIsTermination(line string, lineNumber int, sb *StateBuilder, state
 	}
 	event = strings.TrimSpace(event)
 	if len(event) == 0 {
-		log.Warn(fmt.Sprintf("Bad termination on line %d, no event provided ... skipping", lineNumber+1))
+		log.Warnf("Bad termination on line %d, no event provided ... skipping", lineNumber+1)
 		return
 	}
 	sb.When(event, func(eb *EdgeBuilder) { eb.End() })
-	log.Debug(fmt.Sprintf("%s on %s terminate ... done", state, event))
+	log.Debugf("%s on %s terminate ... done", state, event)
 }

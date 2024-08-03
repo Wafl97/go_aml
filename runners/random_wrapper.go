@@ -1,9 +1,7 @@
 package runners
 
 import (
-	"fmt"
 	"math/rand"
-	"strconv"
 
 	"github.com/Wafl97/go_aml/fsm"
 	"github.com/Wafl97/go_aml/fsm/mode"
@@ -19,7 +17,7 @@ type Summary struct {
 
 func RunAsRandom(fsm *fsm.FinitStateMachine, iterations int) Summary {
 	summary := Summary{
-		Path:          make([]string, 0, iterations),
+		Path:          make([]string, iterations),
 		Occurences:    make(map[string]int, len(fsm.GetRegisteredStates())),
 		DeadlockState: types.None[string](),
 	}
@@ -27,7 +25,7 @@ func RunAsRandom(fsm *fsm.FinitStateMachine, iterations int) Summary {
 	summary.Path = append(summary.Path, currentState.GetName())
 	summary.Occurences[currentState.GetName()] = 1
 	log := logger.New("RANDOM WRAPPER")
-	log.Info("Running for " + strconv.Itoa(iterations) + " iterations")
+	log.Infof("Running for %d iterations", iterations)
 	for i := 1; i < iterations; i++ {
 		//time.Sleep(time.Duration(5) * time.Millisecond)
 		arr := currentState.GetEdgeTriggers()
@@ -42,17 +40,17 @@ func RunAsRandom(fsm *fsm.FinitStateMachine, iterations int) Summary {
 		switch currentMode {
 		case mode.CONTINUE:
 			currentState = fsm.GetCurrentState().Get()
-			summary.Path = append(summary.Path, currentState.GetName())
+			summary.Path[i] = currentState.GetName()
 			summary.Occurences[currentState.GetName()] += 1
 		case mode.CRASH:
-			log.Error(fmt.Sprintf("Model crashed. Cause: %s", fsm.GetCause()))
+			log.Errorf("Model crashed. Cause: %s", fsm.GetCause())
 			return summary
 		case mode.DEADLOCK:
 			log.Error("Deadlock! Exiting ...")
 			summary.DeadlockState = types.Some(fsm.GetCurrentState().Get().GetName())
 			return summary
-		case mode.TERMINATED:
-			log.Info(fmt.Sprintf("Model terminated in state %s", fsm.GetCurrentState().Get().GetName()))
+		case mode.TERMINATE:
+			log.Infof("Model terminated in state %s", fsm.GetCurrentState().Get().GetName())
 			return summary
 		}
 	}

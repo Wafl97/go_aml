@@ -1,8 +1,6 @@
 package fsm
 
 import (
-	"fmt"
-
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/logger"
@@ -21,7 +19,7 @@ type FinitStateMachine struct {
 }
 
 func (fsm *FinitStateMachine) Fire(event string) {
-	fsm.logger.Debug("Firing " + event)
+	fsm.logger.Debugf("Firing %s", event)
 	maybeState := fsm.currentState
 	if maybeState.IsNone() {
 		fsm.cause = "No current state"
@@ -29,7 +27,7 @@ func (fsm *FinitStateMachine) Fire(event string) {
 		return
 	}
 	currentState := maybeState.Get()
-	fsm.logger.Debug("Checking " + currentState.GetName() + " ...")
+	fsm.logger.Debugf("Checking %s ...", currentState.GetName())
 	state, currentMode := currentState.fire(event, &fsm.variables)
 	fsm.mode = currentMode
 	if state.IsNone() {
@@ -38,7 +36,7 @@ func (fsm *FinitStateMachine) Fire(event string) {
 		return
 	}
 	newStateName := state.Get()
-	fsm.logger.Debug(fmt.Sprintf("Transition [%s] -> [%s]", fsm.GetCurrentState().Get().GetName(), newStateName))
+	fsm.logger.Debugf("Transition [%s] -> [%s]", fsm.GetCurrentState().Get().GetName(), newStateName)
 	newState, hasState := fsm.states[newStateName]
 	if !hasState {
 		fsm.cause = "State not found from transition"

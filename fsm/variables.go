@@ -19,5 +19,5 @@ func (variables *Variables) Get(key string) any {
 }
 
 func GetAndCast[T any](variables *Variables, key string) T {
-	return (variables.Get(key)).(T)
+	return variables.Get(key).(T)
 }

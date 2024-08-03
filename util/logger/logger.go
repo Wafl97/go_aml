@@ -57,9 +57,21 @@ func (logger *Logger) Debug(message string) {
 	}
 }
 
+func (logger *Logger) Debugf(format string, args ...any) {
+	if logLevel >= DEBUG {
+		fmt.Printf("%s[DEBUG] [%s] %s%s\n", blue, logger.name, fmt.Sprintf(format, args...), reset)
+	}
+}
+
 func (logger *Logger) Info(message string) {
 	if logLevel >= INFO {
 		fmt.Printf("%s[INFO ] [%s] %s%s\n", green, logger.name, message, reset)
+	}
+}
+
+func (logger *Logger) Infof(format string, args ...any) {
+	if logLevel >= INFO {
+		fmt.Printf("%s[INFO ] [%s] %s%s\n", green, logger.name, fmt.Sprintf(format, args...), reset)
 	}
 }
 
@@ -69,8 +81,20 @@ func (logger *Logger) Warn(message string) {
 	}
 }
 
+func (logger *Logger) Warnf(format string, args ...any) {
+	if logLevel >= WARN {
+		fmt.Printf("%s[WARN ] [%s] %s%s\n", yellow, logger.name, fmt.Sprintf(format, args...), reset)
+	}
+}
+
 func (logger *Logger) Error(message string) {
 	if logLevel >= ERROR {
 		fmt.Printf("%s[ERROR] [%s] %s%s\n", red, logger.name, message, reset)
+	}
+}
+
+func (logger *Logger) Errorf(format string, args ...any) {
+	if logLevel >= ERROR {
+		fmt.Printf("%s[ERROR] [%s] %s%s\n", red, logger.name, fmt.Sprintf(format, args...), reset)
 	}
 }

@@ -1,7 +1,6 @@
 package test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/Wafl97/go_aml/fsm"
@@ -146,10 +145,10 @@ func TestFullModel(t *testing.T) {
 	tm := tmb.Build()
 
 	sum := runners.RunAsRandom(&tm, 1000)
-	log.Info(fmt.Sprintf("Path: %v", sum.Path))
-	log.Info(fmt.Sprintf("Occurences: %v", sum.Occurences))
+	log.Infof("Path: %v", sum.Path)
+	log.Infof("Occurences: %v", sum.Occurences)
 	sum.DeadlockState.HasValue(func(s string) {
-		log.Info(fmt.Sprintf("Deadlock State: %v", s))
+		log.Infof("Deadlock State: %v", s)
 	})
 }
 

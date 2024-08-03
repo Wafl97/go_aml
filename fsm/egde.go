@@ -58,7 +58,7 @@ func newEdgeBuilder() EdgeBuilder {
 }
 
 func (edge *EdgeBuilder) End() *EdgeBuilder {
-	edge.terminate = mode.TERMINATED
+	edge.terminate = mode.TERMINATE
 	return edge
 }
 
