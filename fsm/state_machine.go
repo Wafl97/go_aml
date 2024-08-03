@@ -3,12 +3,15 @@ package fsm
 import (
 	"fmt"
 
+	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/logger"
 	"github.com/Wafl97/go_aml/util/types"
 )
 
 type FinitStateMachine struct {
+	cause        string
+	mode         mode.Mode
 	logger       logger.Logger
 	modelName    string
 	states       map[string]*State
@@ -17,24 +20,32 @@ type FinitStateMachine struct {
 	cache        map[string]any
 }
 
-func (fsm *FinitStateMachine) Fire(event string) bool {
-	success := true
+func (fsm *FinitStateMachine) Fire(event string) {
 	fsm.logger.Debug("Firing " + event)
-	fsm.currentState.HasValue(func(s *State) {
-		fsm.logger.Debug("Checking " + s.GetName() + " ...")
-		state, termination := s.fire(event, &fsm.variables)
-		if termination == DO {
-			success = false
-			return
-		}
-		state.HasValue(func(s string) {
-			fsm.logger.Debug(fmt.Sprintf("Transition [%s] -> [%s]", fsm.GetCurrentState().Get().GetName(), s))
-			fsm.currentState = types.Some(fsm.states[s])
-		}).Else(func() {
-			success = false
-		})
-	})
-	return success
+	maybeState := fsm.currentState
+	if maybeState.IsNone() {
+		fsm.cause = "No current state"
+		fsm.mode = mode.DEADLOCK
+		return
+	}
+	currentState := maybeState.Get()
+	fsm.logger.Debug("Checking " + currentState.GetName() + " ...")
+	state, currentMode := currentState.fire(event, &fsm.variables)
+	fsm.mode = currentMode
+	if state.IsNone() {
+		fsm.cause = "No resulting state from transition"
+		fsm.mode = mode.DEADLOCK
+		return
+	}
+	newStateName := state.Get()
+	fsm.logger.Debug(fmt.Sprintf("Transition [%s] -> [%s]", fsm.GetCurrentState().Get().GetName(), newStateName))
+	newState, hasState := fsm.states[newStateName]
+	if !hasState {
+		fsm.cause = "State not found from transition"
+		fsm.mode = mode.CRASH
+		fsm.currentState = types.None[*State]()
+	}
+	fsm.currentState = types.Some(newState)
 }
 
 func (fsm *FinitStateMachine) GetRegisteredStates() []string {
@@ -48,6 +59,14 @@ func (fsm *FinitStateMachine) GetRegisteredStates() []string {
 	}
 	fsm.cache["states-keys"] = cache
 	return cache
+}
+
+func (fsm *FinitStateMachine) GetMode() mode.Mode {
+	return fsm.mode
+}
+
+func (fsm *FinitStateMachine) GetCause() string {
+	return fsm.cause
 }
 
 func (fsm *FinitStateMachine) GetModelName() string {
@@ -110,6 +129,7 @@ func (fsm *FsmBuilder) Build() FinitStateMachine {
 		fsm.modelName = "Default (FSM)"
 	}
 	return FinitStateMachine{
+		mode:         mode.CONTINUE,
 		logger:       logger.New(fsm.modelName),
 		modelName:    fsm.modelName,
 		currentState: fsm.initialState,

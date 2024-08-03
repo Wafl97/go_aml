@@ -39,7 +39,7 @@ func TestFSM(t *testing.T) {
 				eb.Then(STATE_2)
 			})
 		},
-	)
+	).Initial(STATE_1)
 	sm := smb.Build()
 	if sm.GetModelName() != MODEL_NAME {
 		t.Fail()
@@ -138,7 +138,7 @@ func TestFullModel(t *testing.T) {
 		Given("SX", func(sb *fsm.StateBuilder) {
 			sb.
 				When("TO-S1", func(eb *fsm.EdgeBuilder) {
-					eb.And(func(v fsm.Variables) bool { return v.Get("INT").(int) > 0 }).Then("S1")
+					eb.And(func(v *fsm.Variables) bool { return v.Get("INT").(int) > 0 }).Then("S1")
 				})
 		}).
 		Initial("S1")

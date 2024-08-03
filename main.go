@@ -28,7 +28,10 @@ func main() {
 	fileContents := string(fileContentsBytes)
 	if strings.Contains(fileContents, "syntax fsm") {
 		fsm.FromString(fileContents).HasValue(func(model fsm.FinitStateMachine) {
-			runners.RunAsRandom(&model, 10)
+			summary := runners.RunAsRandom(&model, 10)
+			summary.DeadlockState.HasValue(func(s string) {
+				log.Error(fmt.Sprintf("Model reached a deadlock in state %s", s))
+			})
 			log.Info("Done!")
 		}).Else(func() {
 			log.Error("Model is invalid ... exiting")

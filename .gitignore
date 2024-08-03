@@ -1,4 +1,5 @@
 *.exe
 *.elf
+*.aml
 .vscode/
 .idea/

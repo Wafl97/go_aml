@@ -2,8 +2,8 @@ package fsm
 
 import (
 	"fmt"
-	"strconv"
 
+	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/logger"
 	"github.com/Wafl97/go_aml/util/types"
@@ -16,19 +16,22 @@ type State struct {
 	cache       map[string]any
 }
 
-func (state *State) fire(event string, variables *Variables) (types.Option[string], Termination) {
+func (state *State) fire(event string, variables *Variables) (types.Option[string], mode.Mode) {
 	arr, containsEvent := state.transitions[event]
 	if !containsEvent {
-		return types.None[string](), DONT
+		return types.None[string](), mode.DEADLOCK
 	}
-	state.logger.Debug("Checking " + strconv.Itoa(len(arr)) + " edge(s) ...")
+	state.logger.Debug(fmt.Sprintf("Checking %d edge(s) ...", len(arr)))
 	for _, edge := range arr {
-		res, terminate := edge.checkCondition(variables)
+		res, newMode := edge.checkCondition(variables)
 		if res.IsSome() {
-			return res, terminate
+			return res, mode.CONTINUE
+		}
+		if newMode == mode.TERMINATED {
+			return res, newMode
 		}
 	}
-	return types.None[string](), DONT
+	return types.None[string](), mode.DEADLOCK
 }
 
 func (state *State) GetEdgeTriggers() []string {
