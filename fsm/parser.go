@@ -1,6 +1,7 @@
 package fsm
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/Wafl97/go_aml/util/logger"
@@ -28,6 +29,9 @@ func FromString(str string) types.Option[FinitStateMachine] {
 			handleModelName(line, lineNumber, &builder)
 		}
 
+		// cast order: int -> float -> bool -> string
+		handleVariableDeclaration(line, lineNumber, &builder)
+
 		// set the new line number from iterating over the state definition
 		lineNumber = handleStateDef(line, lineNumber, &builder, &lines)
 	}
@@ -38,6 +42,53 @@ func FromString(str string) types.Option[FinitStateMachine] {
 	}
 	log.Debug("Building complete")
 	return types.Some(builder.Build())
+}
+
+func handleVariableDeclaration(line string, lineNumber int, builder *FsmBuilder) {
+	varDef, isVarDef := strings.CutPrefix(line, "var")
+	if !isVarDef {
+		return
+	}
+	varName, varValue, isValidVarDef := strings.Cut(varDef, "=")
+	if !isValidVarDef {
+		log.Warnf("Bad variable declaration on line %d, invalid declaration ... skipping", lineNumber+1)
+		return
+	}
+	varName = strings.TrimSpace(varName)
+	varValue = strings.TrimSpace(varValue)
+	if len(varName) == 0 {
+		log.Warnf("Bad variable declaration on line %d, missing name ... skipping", lineNumber+1)
+		return
+	}
+	if len(varValue) == 0 {
+		log.Warnf("Bad variable declaration on line %d, missing value ... skipping", lineNumber+1)
+		return
+	}
+	// try int first
+	intValue, ierr := strconv.ParseInt(varValue, 10, 32)
+	if ierr == nil {
+		builder.variables.Set(varName, intValue)
+		log.Debugf("Set Int")
+		return
+	}
+	// then float
+	floatValue, ferr := strconv.ParseFloat(varValue, 32)
+	if ferr == nil {
+		builder.variables.Set(varName, floatValue)
+		log.Debugf("Set Float")
+		return
+	}
+	// then bool
+	boolValue, berr := strconv.ParseBool(varValue)
+	if berr == nil {
+		builder.variables.Set(varName, boolValue)
+		log.Debugf("Set Bool")
+		return
+	}
+	// if all else fails just have a string
+	varValue = strings.Trim(varValue, "\"")
+	builder.variables.Set(varName, varValue)
+	log.Debugf("Set String")
 }
 
 func handleModelName(line string, lineNumber int, builder *FsmBuilder) {
