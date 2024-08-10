@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/Wafl97/go_aml/fsm"
-	"github.com/Wafl97/go_aml/runners"
 	"github.com/Wafl97/go_aml/util/logger"
 )
 
@@ -27,11 +26,11 @@ func main() {
 	fileContents := string(fileContentsBytes)
 	if strings.Contains(fileContents, "syntax fsm") {
 		fsm.FromString(fileContents).HasValue(func(model fsm.FinitStateMachine) {
-			log.Debugf("%v", model)
-			summary := runners.RunAsRandom(&model, 100)
+			fsm.Generate(&model)
+			/* summary := runners.RunAsRandom(&model, 100)
 			summary.DeadlockState.HasValue(func(s string) {
 				log.Errorf("Model reached a deadlock in state %s", s)
-			})
+			}) */
 			log.Info("Done!")
 		}).Else(func() {
 			log.Error("Model is invalid ... exiting")

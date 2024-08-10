@@ -14,6 +14,10 @@ type State struct {
 	cache       map[string]any
 }
 
+func (state *State) GetTransitions() map[string][]*Edge {
+	return state.transitions
+}
+
 func (state *State) fire(event string, variables *Variables) (types.Option[string], mode.Mode) {
 	arr, containsEvent := state.transitions[event]
 	if !containsEvent {
