@@ -51,6 +51,7 @@ type Condition struct {
 
 type Computation struct {
 	left      string
+	operator  string
 	right     any
 	valueType VariableType
 }

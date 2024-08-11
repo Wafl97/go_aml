@@ -56,8 +56,9 @@ type Transition struct {
 	function 	   func()
 }
 type StateNode struct {
-	name        string	
-	transitions map[string][]Transition
+	name        	   string	
+	defaultComputation func(event string)
+	transitions        map[string][]Transition
 }
 
 var ( /* VARIABLES */
@@ -81,10 +82,16 @@ func main() {
 			event = strings.TrimSpace(event)
 			switch state, success := CURRENT_STATE.transitions[event]; success {
 			case false:
+				if CURRENT_STATE.defaultComputation != nil {
+					CURRENT_STATE.defaultComputation(event)
+				}
 				continue
 			case true:
 				for _, transition := range state {
 					if transition.condition != nil && !transition.condition() {
+						if CURRENT_STATE.defaultComputation != nil {
+							CURRENT_STATE.defaultComputation(event)
+						}
 						continue
 					}
 					switch transition.resultingState {
@@ -112,14 +119,20 @@ func main() {
 func generateCode(model *FinitStateMachine) string {
 	var variables string
 	for varName, varValue := range model.variables.values {
-		variables += fmt.Sprintf("\tVAR_%s = %v\n", varName, varValue)
+		variables += fmt.Sprintf("\t%s = %v\n", varName, varValue)
 	}
 	var states string
 	stateCount := 0
 	var transitions string
 	for stateName, state := range model.states {
 		states += fmt.Sprintf("\tSTATE_%s State = %d\n", stateName, stateCount)
-		transitions += fmt.Sprintf("\t{\"%s\", map[string][]Transition{ /* STATE_%s */\n", stateName, stateName)
+		var defaultComputation string
+		if state.defaultComputations == nil {
+			defaultComputation = "nil"
+		} else {
+			defaultComputation = generateCompuation("func(event string)", *state.defaultComputations)
+		}
+		transitions += fmt.Sprintf("\t{\"%s\", %s, map[string][]Transition{ /* STATE_%s */\n", stateName, defaultComputation, stateName)
 		for event, edges := range state.GetTransitions() {
 			transitions += fmt.Sprintf("\t\t\"%s\": {\n", event)
 			for _, edge := range edges {
@@ -130,7 +143,7 @@ func generateCode(model *FinitStateMachine) string {
 				default:
 					resultState = fmt.Sprintf("STATE_%s", edge.resultingState.Get())
 				}
-				transitions += fmt.Sprintf("\t\t\t{%s, %s, %s}, /* %s */\n", generateCondition(edge), resultState, generateCompuation(edge), edge.metaData.rawLine)
+				transitions += fmt.Sprintf("\t\t\t{%s, %s, %s}, /* %s */\n", generateCondition(edge), resultState, generateCompuation("func()", edge.computation2), edge.metaData.rawLine)
 			}
 			transitions += "\t\t},\n"
 		}
@@ -141,15 +154,15 @@ func generateCode(model *FinitStateMachine) string {
 	return fmt.Sprintf(codeStructure, GENERATOR_VERSION, variables, states, transitions, initialState)
 }
 
-func generateCompuation(edge *Edge) string {
+func generateCompuation(funcSignature string, computations []Computation) string {
 	var computationString string
-	switch len(edge.computation2) {
+	switch len(computations) {
 	case 0:
 		computationString = "nil"
 	default:
-		computationString += "func() { "
-		for _, computation := range edge.computation2 {
-			computationString += fmt.Sprintf("VAR_%s = %v; ", computation.left, computation.right)
+		computationString += fmt.Sprintf("%s {", funcSignature)
+		for _, computation := range computations {
+			computationString += fmt.Sprintf(" %s %s %v;", computation.left, computation.operator, computation.right)
 		}
 		computationString += " }"
 	}
@@ -167,22 +180,22 @@ func generateCondition(edge *Edge) string {
 			if condition.valueType == BOOL { // TODO: please for the love of god refactor this vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				if condition.right == "true" { //																							|
 					if index == len(edge.condition2)-1 { //																					|
-						contitionalString += fmt.Sprintf("VAR_%s", condition.left) //														|
+						contitionalString += fmt.Sprintf("%s", condition.left) //														|
 					} else { //																												|
-						contitionalString += fmt.Sprintf("VAR_%s && ", condition.left) // 													|
+						contitionalString += fmt.Sprintf("%s && ", condition.left) // 													|
 					} //																													|
 				} else { //																													|
 					if index == len(edge.condition2)-1 { // 																				|
-						contitionalString += fmt.Sprintf("!VAR_%s", condition.left) // 														|
+						contitionalString += fmt.Sprintf("!%s", condition.left) // 														|
 					} else { //																												|
-						contitionalString += fmt.Sprintf("!VAR_%s && ", condition.left) //													|
+						contitionalString += fmt.Sprintf("!%s && ", condition.left) //													|
 					} //																													|
 				} //																														|
 			} else { //																														|
 				if index == len(edge.condition2)-1 { //																						|
-					contitionalString += fmt.Sprintf("VAR_%s %s %v", condition.left, condition.symbol.ToString(), condition.right) //		|
+					contitionalString += fmt.Sprintf("%s %s %v", condition.left, condition.symbol.ToString(), condition.right) //		|
 				} else { //																													|
-					contitionalString += fmt.Sprintf("VAR_%s %s %v && ", condition.left, condition.symbol.ToString(), condition.right) // 	|
+					contitionalString += fmt.Sprintf("%s %s %v && ", condition.left, condition.symbol.ToString(), condition.right) // 	|
 				} //																														|
 			} // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

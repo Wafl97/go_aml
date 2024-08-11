@@ -8,10 +8,11 @@ import (
 )
 
 type State struct {
-	logger      logger.Logger
-	name        string
-	transitions map[string][]*Edge
-	cache       map[string]any
+	logger              logger.Logger
+	name                string
+	defaultComputations *[]Computation
+	transitions         map[string][]*Edge
+	cache               map[string]any
 }
 
 func (state *State) GetTransitions() map[string][]*Edge {
@@ -54,37 +55,45 @@ func (state *State) GetName() string {
 }
 
 type StateBuilder struct {
-	logger      logger.Logger
-	name        string
-	transitions map[string][]*Edge
+	logger              logger.Logger
+	name                string
+	defaultComputations *[]Computation
+	transitions         map[string][]*Edge
 }
 
 func newStateBuilder(state string) StateBuilder {
 	return StateBuilder{
-		logger:      logger.New(state + "(Builder)"),
-		name:        state,
-		transitions: map[string][]*Edge{},
+		logger:              logger.New(state + "(Builder)"),
+		name:                state,
+		defaultComputations: nil,
+		transitions:         map[string][]*Edge{},
 	}
 }
 
-func (sb *StateBuilder) build() State {
+func (builder *StateBuilder) build() State {
 	return State{
-		logger:      logger.New(sb.name),
-		name:        sb.name,
-		transitions: sb.transitions,
-		cache:       map[string]any{},
+		logger:              logger.New(builder.name),
+		name:                builder.name,
+		defaultComputations: builder.defaultComputations,
+		transitions:         builder.transitions,
+		cache:               map[string]any{},
 	}
 }
 
-func (sb *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilder]) *StateBuilder {
+func (builder *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilder]) *StateBuilder {
 	edgeBuilder := newEdgeBuilder()
 	f(&edgeBuilder)
 	edge := edgeBuilder.build()
-	_, contains := sb.transitions[event]
+	_, contains := builder.transitions[event]
 	if contains {
-		sb.transitions[event] = append(sb.transitions[event], &edge)
+		builder.transitions[event] = append(builder.transitions[event], &edge)
 	} else {
-		sb.transitions[event] = []*Edge{&edge}
+		builder.transitions[event] = []*Edge{&edge}
 	}
-	return sb
+	return builder
+}
+
+func (builder *StateBuilder) AutoRun(computations *[]Computation) *StateBuilder {
+	builder.defaultComputations = computations
+	return builder
 }

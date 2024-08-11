@@ -124,6 +124,10 @@ func handleStateDef(line string, lineNumber int, builder *FsmBuilder, lines *[]s
 				break
 			}
 			line = strings.TrimSpace(line)
+
+			if checkLineIsAutoComputation(line, lineNumber, sb, builder) {
+				continue
+			}
 			if checkLineIsTermination(line, iterated, sb, state) {
 				continue
 			}
@@ -141,6 +145,16 @@ func handleStateDef(line string, lineNumber int, builder *FsmBuilder, lines *[]s
 		plog.Debugf("setting initial state %s", state)
 	}
 	return iterated
+}
+
+func checkLineIsAutoComputation(line string, lineNumber int, sb *StateBuilder, builder *FsmBuilder) bool {
+	autoComputation, isAutoCompuation := strings.CutPrefix(line, ">>")
+	if !isAutoCompuation {
+		return false
+	}
+	compuations := parseComputation(autoComputation, lineNumber, builder)
+	sb.AutoRun(compuations)
+	return true
 }
 
 func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state string, builder *FsmBuilder) bool {
@@ -192,6 +206,7 @@ func parseComputation(computationString string, lineNumber int, builder *FsmBuil
 			continue
 		}
 		computation.valueType = builder.variables.types[computation.left]
+		computation.operator = tokens[1]
 		computation.right = tokens[2]
 		computations = append(computations, computation)
 	}
