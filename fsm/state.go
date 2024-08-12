@@ -7,10 +7,18 @@ import (
 	"github.com/Wafl97/go_aml/util/types"
 )
 
+type AutoEvent struct {
+	conditions     []Condition
+	compuatations  []Computation
+	resultingState string
+	terminate      mode.Mode
+}
+
 type State struct {
 	logger              logger.Logger
 	name                string
-	defaultComputations *[]Computation
+	defaultComputations []Computation
+	autoEvents          []AutoEvent
 	transitions         map[string][]*Edge
 	cache               map[string]any
 }
@@ -57,7 +65,8 @@ func (state *State) GetName() string {
 type StateBuilder struct {
 	logger              logger.Logger
 	name                string
-	defaultComputations *[]Computation
+	defaultComputations []Computation
+	autoEvents          []AutoEvent
 	transitions         map[string][]*Edge
 }
 
@@ -66,6 +75,7 @@ func newStateBuilder(state string) StateBuilder {
 		logger:              logger.New(state + "(Builder)"),
 		name:                state,
 		defaultComputations: nil,
+		autoEvents:          nil,
 		transitions:         map[string][]*Edge{},
 	}
 }
@@ -75,6 +85,7 @@ func (builder *StateBuilder) build() State {
 		logger:              logger.New(builder.name),
 		name:                builder.name,
 		defaultComputations: builder.defaultComputations,
+		autoEvents:          builder.autoEvents,
 		transitions:         builder.transitions,
 		cache:               map[string]any{},
 	}
@@ -94,6 +105,15 @@ func (builder *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilde
 }
 
 func (builder *StateBuilder) AutoRun(computations *[]Computation) *StateBuilder {
-	builder.defaultComputations = computations
+	builder.defaultComputations = *computations
+	return builder
+}
+
+func (builder *StateBuilder) AutoRunEvent(autoRunEvent AutoEvent) *StateBuilder {
+	if builder.autoEvents == nil {
+		builder.autoEvents = []AutoEvent{autoRunEvent}
+	} else {
+		builder.autoEvents = append(builder.autoEvents, autoRunEvent)
+	}
 	return builder
 }

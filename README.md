@@ -59,3 +59,21 @@ state STATE_3 {
     1. Different files for each state machine
     2. Communication between state machines
     
+
+
+## Working on File
+
+```go
+func main() {
+  fileBytes, err := os.ReadFile("../parser.aml")
+  if err != nil {
+    return
+  }
+  fileContent := string(fileBytes)
+  chars := strings.Split(fileContent, "")
+  for _, char := range chars {
+    fmt.Println(char)
+    handleEvent(char)
+  }
+}
+```

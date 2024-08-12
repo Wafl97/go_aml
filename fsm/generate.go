@@ -9,7 +9,7 @@ import (
 	"github.com/Wafl97/go_aml/util/logger"
 )
 
-const GENERATOR_VERSION = "v0.0.2"
+const GENERATOR_VERSION = "v0.1.0"
 
 var glog logger.Logger
 
@@ -49,17 +49,20 @@ import (
 	"strings"
 )
 
-type State int
-type Transition struct {
-	condition 	   func() bool
-	resultingState State
-	function 	   func()
-}
-type StateNode struct {
-	name        	   string	
-	defaultComputation func(event string)
-	transitions        map[string][]Transition
-}
+type (
+	State      int
+	Transition struct {
+		condition      func() bool
+		resultingState State
+		function       func()
+	}
+	StateNode struct {
+		name                 string
+		autoComputation      func(event string)
+		autoEventTransitions []Transition
+		transitions          map[string][]Transition
+	}
+)
 
 var ( /* VARIABLES */
 %s)
@@ -71,7 +74,7 @@ const ( /* STATES */
 var STATES []StateNode = []StateNode{
 %s}
 
-var CURRENT_STATE StateNode = STATES[STATE_%s]
+var CURRENT_STATE *StateNode = &STATES[STATE_%s]
 	
 func main() {
 	reader := bufio.NewReader(os.Stdin)
@@ -79,39 +82,54 @@ func main() {
 		fmt.Printf("State = %%s\n", CURRENT_STATE.name)
 		switch event, err := reader.ReadString('\n'); err {
 		case nil:
-			event = strings.TrimSpace(event)
-			switch state, success := CURRENT_STATE.transitions[event]; success {
-			case false:
-				if CURRENT_STATE.defaultComputation != nil {
-					CURRENT_STATE.defaultComputation(event)
-				}
-				continue
-			case true:
-				for _, transition := range state {
-					if transition.condition != nil && !transition.condition() {
-						if CURRENT_STATE.defaultComputation != nil {
-							CURRENT_STATE.defaultComputation(event)
-						}
-						continue
-					}
-					switch transition.resultingState {
-					case TERMINATION_STATE:
-						fmt.Print("Terminating")
-						os.Exit(0)
-					default:
-						CURRENT_STATE = STATES[transition.resultingState]
-						if transition.function != nil {
-							transition.function()
-						}
-					}
-				}
-			}
+			handleEvent(event)
 		case io.EOF:
 			os.Exit(0)
 		default:
 			fmt.Print(err.Error())
 			os.Exit(1)
 		}
+	}
+}
+
+func handleEvent(event string) {
+	event = strings.TrimSpace(event)
+	state, success := CURRENT_STATE.transitions[event]
+	if !success {
+		runAutoEvents(event)
+		return
+	}
+	for _, transition := range state {
+		if transition.condition == nil || transition.condition() {
+			applyTransition(&transition)
+			return
+		}
+	}
+	runAutoEvents(event)
+}
+
+func applyTransition(transition *Transition) {
+	switch transition.resultingState {
+	case TERMINATION_STATE:
+		fmt.Println("Terminating")
+		os.Exit(0)
+	default:
+		CURRENT_STATE = &STATES[transition.resultingState]
+		if transition.function != nil {
+			transition.function()
+		}
+	}
+}
+
+func runAutoEvents(event string) {
+	if CURRENT_STATE.autoComputation != nil {
+		CURRENT_STATE.autoComputation(event)
+	}
+	for _, autoTransition := range CURRENT_STATE.autoEventTransitions {
+		if autoTransition.condition != nil && !autoTransition.condition() {
+			continue
+		}
+		applyTransition(&autoTransition)
 	}
 }
 `
@@ -130,11 +148,30 @@ func generateCode(model *FinitStateMachine) string {
 		if state.defaultComputations == nil {
 			defaultComputation = "nil"
 		} else {
-			defaultComputation = generateCompuation("func(event string)", *state.defaultComputations)
+			defaultComputation = generateCompuation("func(event string)", &state.defaultComputations)
 		}
-		transitions += fmt.Sprintf("\t{\"%s\", %s, map[string][]Transition{ /* STATE_%s */\n", stateName, defaultComputation, stateName)
+		var autoEvents string = ""
+		for _, autoEvent := range state.autoEvents {
+			var resultState string
+			switch autoEvent.terminate {
+			case mode.TERMINATE:
+				resultState = "TERMINATION_STATE"
+			default:
+				resultState = fmt.Sprintf("STATE_%s", autoEvent.resultingState)
+			}
+			autoEvents += fmt.Sprintf("\t\t\t{%s, %s, %s},\n",
+				generateCondition(&autoEvent.conditions),
+				resultState,
+				generateCompuation("func()",
+					&autoEvent.compuatations))
+		}
+		transitions += fmt.Sprintf("\t{\"%s\",\n\t\t%s,\n\t\t[]Transition{ /* AUTO-EVENTS */\n%s\t\t},\n\t\tmap[string][]Transition{ /* STATE_%s */\n",
+			stateName,
+			defaultComputation,
+			autoEvents,
+			stateName)
 		for event, edges := range state.GetTransitions() {
-			transitions += fmt.Sprintf("\t\t\"%s\": {\n", event)
+			transitions += fmt.Sprintf("\t\t\t\"%s\": {\n", event)
 			for _, edge := range edges {
 				var resultState string
 				switch edge.terminate {
@@ -143,25 +180,29 @@ func generateCode(model *FinitStateMachine) string {
 				default:
 					resultState = fmt.Sprintf("STATE_%s", edge.resultingState.Get())
 				}
-				transitions += fmt.Sprintf("\t\t\t{%s, %s, %s}, /* %s */\n", generateCondition(edge), resultState, generateCompuation("func()", edge.computation2), edge.metaData.rawLine)
+				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",
+					generateCondition(&edge.condition2),
+					resultState,
+					generateCompuation("func()", &edge.computation2),
+					edge.metaData.rawLine)
 			}
-			transitions += "\t\t},\n"
+			transitions += "\t\t\t},\n"
 		}
-		transitions += "\t}},\n"
+		transitions += "\t\t},\n\t},\n"
 		stateCount++
 	}
 	initialState := model.currentState.Get().GetName()
 	return fmt.Sprintf(codeStructure, GENERATOR_VERSION, variables, states, transitions, initialState)
 }
 
-func generateCompuation(funcSignature string, computations []Computation) string {
+func generateCompuation(funcSignature string, computations *[]Computation) string {
 	var computationString string
-	switch len(computations) {
+	switch len(*computations) {
 	case 0:
 		computationString = "nil"
 	default:
 		computationString += fmt.Sprintf("%s {", funcSignature)
-		for _, computation := range computations {
+		for _, computation := range *computations {
 			computationString += fmt.Sprintf(" %s %s %v;", computation.left, computation.operator, computation.right)
 		}
 		computationString += " }"
@@ -169,33 +210,33 @@ func generateCompuation(funcSignature string, computations []Computation) string
 	return computationString
 }
 
-func generateCondition(edge *Edge) string {
+func generateCondition(conditions *[]Condition) string {
 	var contitionalString string
-	switch len(edge.condition2) {
+	switch len(*conditions) {
 	case 0:
 		contitionalString = "nil"
 	default:
 		contitionalString += "func() bool { return "
-		for index, condition := range edge.condition2 {
+		for index, condition := range *conditions {
 			if condition.valueType == BOOL { // TODO: please for the love of god refactor this vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				if condition.right == "true" { //																							|
-					if index == len(edge.condition2)-1 { //																					|
-						contitionalString += fmt.Sprintf("%s", condition.left) //														|
+					if index == len(*conditions)-1 { //																						|
+						contitionalString += fmt.Sprintf("%s", condition.left) //															|
 					} else { //																												|
-						contitionalString += fmt.Sprintf("%s && ", condition.left) // 													|
+						contitionalString += fmt.Sprintf("%s && ", condition.left) // 														|
 					} //																													|
 				} else { //																													|
-					if index == len(edge.condition2)-1 { // 																				|
-						contitionalString += fmt.Sprintf("!%s", condition.left) // 														|
+					if index == len(*conditions)-1 { // 																					|
+						contitionalString += fmt.Sprintf("!%s", condition.left) // 															|
 					} else { //																												|
-						contitionalString += fmt.Sprintf("!%s && ", condition.left) //													|
+						contitionalString += fmt.Sprintf("!%s && ", condition.left) //														|
 					} //																													|
 				} //																														|
 			} else { //																														|
-				if index == len(edge.condition2)-1 { //																						|
-					contitionalString += fmt.Sprintf("%s %s %v", condition.left, condition.symbol.ToString(), condition.right) //		|
+				if index == len(*conditions)-1 { //																							|
+					contitionalString += fmt.Sprintf("%s %s %v", condition.left, condition.symbol.ToString(), condition.right) //			|
 				} else { //																													|
-					contitionalString += fmt.Sprintf("%s %s %v && ", condition.left, condition.symbol.ToString(), condition.right) // 	|
+					contitionalString += fmt.Sprintf("%s %s %v && ", condition.left, condition.symbol.ToString(), condition.right) // 		|
 				} //																														|
 			} // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

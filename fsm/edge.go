@@ -132,8 +132,8 @@ func (builder *EdgeBuilder) And(condition functions.Predicate[*Variables]) *Edge
 	return builder
 }
 
-func (builder *EdgeBuilder) And2(conditions []Condition) *EdgeBuilder {
-	builder.condition2 = append(builder.condition2, conditions...)
+func (builder *EdgeBuilder) And2(conditions *[]Condition) *EdgeBuilder {
+	builder.condition2 = append(builder.condition2, *conditions...)
 	return builder
 }
 
@@ -148,8 +148,8 @@ func (builder *EdgeBuilder) Run(computation functions.Consumer[*Variables]) *Edg
 	return builder
 }
 
-func (builder *EdgeBuilder) Run2(computations []Computation) *EdgeBuilder {
-	builder.computation2 = append(builder.computation2, computations...)
+func (builder *EdgeBuilder) Run2(computations *[]Computation) *EdgeBuilder {
+	builder.computation2 = append(builder.computation2, *computations...)
 	return builder
 }
 
