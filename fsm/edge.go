@@ -43,10 +43,10 @@ func (symbol Symbol) ToString() string {
 }
 
 type Condition struct {
-	left      string
-	symbol    Symbol
-	right     any
-	valueType VariableType
+	Left      string
+	Symbol    Symbol
+	Right     any
+	ValueType VariableType
 }
 
 type Computation struct {

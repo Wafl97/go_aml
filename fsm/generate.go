@@ -160,7 +160,7 @@ func generateCode(model *FinitStateMachine) string {
 				resultState = fmt.Sprintf("STATE_%s", autoEvent.resultingState)
 			}
 			autoEvents += fmt.Sprintf("\t\t\t{%s, %s, %s},\n",
-				generateCondition(&autoEvent.conditions),
+				GenerateCondition(&autoEvent.conditions),
 				resultState,
 				generateCompuation("func()",
 					&autoEvent.compuatations))
@@ -181,7 +181,7 @@ func generateCode(model *FinitStateMachine) string {
 					resultState = fmt.Sprintf("STATE_%s", edge.resultingState.Get())
 				}
 				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",
-					generateCondition(&edge.condition2),
+					GenerateCondition(&edge.condition2),
 					resultState,
 					generateCompuation("func()", &edge.computation2),
 					edge.metaData.rawLine)
@@ -210,38 +210,31 @@ func generateCompuation(funcSignature string, computations *[]Computation) strin
 	return computationString
 }
 
-func generateCondition(conditions *[]Condition) string {
-	var contitionalString string
+func GenerateCondition(conditions *[]Condition) string {
 	switch len(*conditions) {
 	case 0:
-		contitionalString = "nil"
+		return "nil"
 	default:
-		contitionalString += "func() bool { return "
+		contitionalString := "func() bool { return "
+		and := "&& "
+		var negate string
 		for index, condition := range *conditions {
-			if condition.valueType == BOOL { // TODO: please for the love of god refactor this vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-				if condition.right == "true" { //																							|
-					if index == len(*conditions)-1 { //																						|
-						contitionalString += fmt.Sprintf("%s", condition.left) //															|
-					} else { //																												|
-						contitionalString += fmt.Sprintf("%s && ", condition.left) // 														|
-					} //																													|
-				} else { //																													|
-					if index == len(*conditions)-1 { // 																					|
-						contitionalString += fmt.Sprintf("!%s", condition.left) // 															|
-					} else { //																												|
-						contitionalString += fmt.Sprintf("!%s && ", condition.left) //														|
-					} //																													|
-				} //																														|
-			} else { //																														|
-				if index == len(*conditions)-1 { //																							|
-					contitionalString += fmt.Sprintf("%s %s %v", condition.left, condition.symbol.ToString(), condition.right) //			|
-				} else { //																													|
-					contitionalString += fmt.Sprintf("%s %s %v && ", condition.left, condition.symbol.ToString(), condition.right) // 		|
-				} //																														|
-			} // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+			if index == len(*conditions)-1 {
+				and = ""
+			}
+			switch condition.ValueType {
+			case BOOL:
+				if condition.Right == "true" {
+					negate = ""
+				} else {
+					negate = "!"
+				}
+				contitionalString += fmt.Sprintf("%s%s %s", negate, condition.Left, and)
+			default:
+				contitionalString += fmt.Sprintf("%s %s %v %s", condition.Left, condition.Symbol.ToString(), condition.Right, and)
+			}
 		}
-		contitionalString += " }"
+		contitionalString += "}"
+		return contitionalString
 	}
-	return contitionalString
 }

@@ -299,26 +299,26 @@ func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder)
 			plog.Warnf("Bad condition for transition on line %d, cannot infer condition (%s) ... skipping", lineNumber+1, subCondition)
 			continue
 		}
-		condition.left = tokens[0]
-		if _, isDeclared := builder.variables.values[condition.left]; !isDeclared {
-			plog.Warnf("Bad condition for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, condition.left)
+		condition.Left = tokens[0]
+		if _, isDeclared := builder.variables.values[condition.Left]; !isDeclared {
+			plog.Warnf("Bad condition for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, condition.Left)
 			continue
 		}
-		condition.right = tokens[2]
-		condition.valueType = builder.variables.types[condition.left]
+		condition.Right = tokens[2]
+		condition.ValueType = builder.variables.types[condition.Left]
 		switch tokens[1] {
 		case "==":
-			condition.symbol = EQ
+			condition.Symbol = EQ
 		case "!=":
-			condition.symbol = NE
+			condition.Symbol = NE
 		case ">=":
-			condition.symbol = GE
+			condition.Symbol = GE
 		case "<":
-			condition.symbol = GT
+			condition.Symbol = GT
 		case "<=":
-			condition.symbol = LE
+			condition.Symbol = LE
 		case ">":
-			condition.symbol = LT
+			condition.Symbol = LT
 		default:
 			plog.Warnf("Bad condition in transition on line %d, invalid symbol ... skipping", lineNumber+1)
 		}
