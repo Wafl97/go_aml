@@ -313,11 +313,11 @@ func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder)
 			condition.Symbol = NE
 		case ">=":
 			condition.Symbol = GE
-		case "<":
+		case ">":
 			condition.Symbol = GT
 		case "<=":
 			condition.Symbol = LE
-		case ">":
+		case "<":
 			condition.Symbol = LT
 		default:
 			plog.Warnf("Bad condition in transition on line %d, invalid symbol ... skipping", lineNumber+1)
