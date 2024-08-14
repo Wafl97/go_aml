@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/logger"
@@ -215,26 +216,10 @@ func GenerateCondition(conditions *[]Condition) string {
 	case 0:
 		return "nil"
 	default:
-		contitionalString := "func() bool { return "
-		and := "&& "
-		var negate string
-		for index, condition := range *conditions {
-			if index == len(*conditions)-1 {
-				and = ""
-			}
-			switch condition.ValueType {
-			case BOOL:
-				if condition.Right == "true" {
-					negate = ""
-				} else {
-					negate = "!"
-				}
-				contitionalString += fmt.Sprintf("%s%s %s", negate, condition.Left, and)
-			default:
-				contitionalString += fmt.Sprintf("%s %s %v %s", condition.Left, condition.Symbol.ToString(), condition.Right, and)
-			}
+		conditionalStrings := make([]string, len(*conditions))
+		for i := 0; i < len(conditionalStrings); i++ {
+			conditionalStrings[i] = (*conditions)[i].ToString()
 		}
-		contitionalString += "}"
-		return contitionalString
+		return fmt.Sprintf("func() bool { return %s }", strings.Join(conditionalStrings, " && "))
 	}
 }
