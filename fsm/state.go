@@ -72,11 +72,9 @@ type StateBuilder struct {
 
 func newStateBuilder(state string) StateBuilder {
 	return StateBuilder{
-		logger:              logger.New(state + "(Builder)"),
-		name:                state,
-		defaultComputations: nil,
-		autoEvents:          nil,
-		transitions:         map[string][]*Edge{},
+		logger:      logger.New(state + "(Builder)"),
+		name:        state,
+		transitions: map[string][]*Edge{},
 	}
 }
 
@@ -110,10 +108,7 @@ func (builder *StateBuilder) AutoRun(computations *[]Computation) *StateBuilder 
 }
 
 func (builder *StateBuilder) AutoRunEvent(autoRunEvent AutoEvent) *StateBuilder {
-	if builder.autoEvents == nil {
-		builder.autoEvents = []AutoEvent{autoRunEvent}
-	} else {
-		builder.autoEvents = append(builder.autoEvents, autoRunEvent)
-	}
+	builder.autoEvents = append(builder.autoEvents, autoRunEvent)
+	builder.logger.Debug("A.R.E.")
 	return builder
 }

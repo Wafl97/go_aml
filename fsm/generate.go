@@ -149,7 +149,7 @@ func generateCode(model *FinitStateMachine) string {
 		if state.defaultComputations == nil {
 			defaultComputation = "nil"
 		} else {
-			defaultComputation = generateCompuation("func(event string)", &state.defaultComputations)
+			defaultComputation = GenerateComputation("func(event string)", &state.defaultComputations)
 		}
 		var autoEvents string = ""
 		for _, autoEvent := range state.autoEvents {
@@ -163,7 +163,7 @@ func generateCode(model *FinitStateMachine) string {
 			autoEvents += fmt.Sprintf("\t\t\t{%s, %s, %s},\n",
 				GenerateCondition(&autoEvent.conditions),
 				resultState,
-				generateCompuation("func()",
+				GenerateComputation("func()",
 					&autoEvent.compuatations))
 		}
 		transitions += fmt.Sprintf("\t{\"%s\",\n\t\t%s,\n\t\t[]Transition{ /* AUTO-EVENTS */\n%s\t\t},\n\t\tmap[string][]Transition{ /* STATE_%s */\n",
@@ -184,7 +184,7 @@ func generateCode(model *FinitStateMachine) string {
 				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",
 					GenerateCondition(&edge.condition2),
 					resultState,
-					generateCompuation("func()", &edge.computation2),
+					GenerateComputation("func()", &edge.computation2),
 					edge.metaData.rawLine)
 			}
 			transitions += "\t\t\t},\n"
@@ -196,19 +196,17 @@ func generateCode(model *FinitStateMachine) string {
 	return fmt.Sprintf(codeStructure, GENERATOR_VERSION, variables, states, transitions, initialState)
 }
 
-func generateCompuation(funcSignature string, computations *[]Computation) string {
-	var computationString string
+func GenerateComputation(funcSignature string, computations *[]Computation) string {
 	switch len(*computations) {
 	case 0:
-		computationString = "nil"
+		return "nil"
 	default:
-		computationString += fmt.Sprintf("%s {", funcSignature)
-		for _, computation := range *computations {
-			computationString += fmt.Sprintf(" %s %s %v;", computation.left, computation.operator, computation.right)
+		computationStrings := make([]string, len(*computations))
+		for i := 0; i < len(computationStrings); i++ {
+			computationStrings[i] = (*computations)[i].ToString()
 		}
-		computationString += " }"
+		return fmt.Sprintf("%s { %s }", funcSignature, strings.Join(computationStrings, "; "))
 	}
-	return computationString
 }
 
 func GenerateCondition(conditions *[]Condition) string {

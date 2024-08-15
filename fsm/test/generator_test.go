@@ -66,3 +66,65 @@ func TestGenerateCondition(t *testing.T) {
 		}
 	}
 }
+
+func TestGenerateComputation(t *testing.T) {
+	expectedComputationsStrings := []string{
+		"func() { a = 1 }",                    // TEST 1
+		"func() { a += 0.1; b = !b }",         // TEST 2
+		"func() { a = \"\"; b /= 2; c *= 5 }", // TEST 3
+	}
+
+	computations := [][]fsm.Computation{
+		{ // TEST 1
+			{
+				Left:      "a",
+				Operator:  fsm.ASSIGN,
+				Right:     1,
+				ValueType: fsm.INT,
+			},
+		},
+		{ // TEST 2
+			{
+				Left:      "a",
+				Operator:  fsm.ADD_ASSIGN,
+				Right:     0.1,
+				ValueType: fsm.FLOAT,
+			},
+			{
+				Left:      "b",
+				Operator:  fsm.ASSIGN,
+				Right:     "!b",
+				ValueType: fsm.BOOL,
+			},
+		},
+		{ // TEST 3
+			{
+				Left:      "a",
+				Operator:  fsm.ASSIGN,
+				Right:     "\"\"",
+				ValueType: fsm.STRING,
+			},
+			{
+				Left:      "b",
+				Operator:  fsm.DIV_ASSIGN,
+				Right:     "2",
+				ValueType: fsm.INT,
+			},
+			{
+				Left:      "c",
+				Operator:  fsm.MUL_ASSIGN,
+				Right:     "5",
+				ValueType: fsm.INT,
+			},
+		},
+	}
+
+	actualComputationsStrings := make([]string, len(expectedComputationsStrings))
+
+	for test := 0; test < len(actualComputationsStrings); test++ {
+		actualComputationsStrings[test] = fsm.GenerateComputation("func()", &computations[test])
+		if actualComputationsStrings[test] != expectedComputationsStrings[test] {
+			t.Error("generateCondition: failed")
+		}
+	}
+}

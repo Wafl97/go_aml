@@ -275,14 +275,28 @@ func parseComputation(computationString string, lineNumber int, builder *FsmBuil
 			plog.Warnf("Bad computation for transition on line %d, cannot infer computation (%s) ... skipping", lineNumber+1, subComputation)
 			continue
 		}
-		computation.left = tokens[0]
-		if _, isDeclared := builder.variables.values[computation.left]; !isDeclared {
-			plog.Warnf("Bad computation for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, computation.left)
+		computation.Left = tokens[0]
+		if _, isDeclared := builder.variables.values[computation.Left]; !isDeclared {
+			plog.Warnf("Bad computation for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, computation.Left)
 			continue
 		}
-		computation.valueType = builder.variables.types[computation.left]
-		computation.operator = tokens[1]
-		computation.right = tokens[2]
+		computation.ValueType = builder.variables.types[computation.Left]
+		switch tokens[1] {
+		case "=":
+			computation.Operator = ASSIGN
+		case "+=":
+			computation.Operator = ADD_ASSIGN
+		case "-=":
+			computation.Operator = SUB_ASSIGN
+		case "*=":
+			computation.Operator = MUL_ASSIGN
+		case "/=":
+			computation.Operator = DIV_ASSIGN
+		default:
+			plog.Warnf("Bad computation in transition on line %d, invalid symbol (%s) ... skipping", lineNumber+1, tokens[1])
+			continue
+		}
+		computation.Right = tokens[2]
 		computations = append(computations, computation)
 	}
 	return &computations
@@ -308,19 +322,20 @@ func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder)
 		condition.ValueType = builder.variables.types[condition.Left]
 		switch tokens[1] {
 		case "==":
-			condition.Symbol = EQ
+			condition.Symbol = EQUAL
 		case "!=":
-			condition.Symbol = NE
+			condition.Symbol = NOT_EQUAL
 		case ">=":
-			condition.Symbol = GE
+			condition.Symbol = GRATER_THAN_OR_EQUAL
 		case ">":
-			condition.Symbol = GT
+			condition.Symbol = GRATER_THAN
 		case "<=":
-			condition.Symbol = LE
+			condition.Symbol = LESS_THAN_OR_EQUAL
 		case "<":
-			condition.Symbol = LT
+			condition.Symbol = LESS_THAN
 		default:
-			plog.Warnf("Bad condition in transition on line %d, invalid symbol ... skipping", lineNumber+1)
+			plog.Warnf("Bad condition in transition on line %d, invalid symbol (%s) ... skipping", lineNumber+1, tokens[1])
+			continue
 		}
 		conditions = append(conditions, condition)
 	}

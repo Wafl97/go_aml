@@ -1,8 +1,6 @@
 package fsm
 
 import (
-	"fmt"
-
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/types"
@@ -12,65 +10,6 @@ type EdgeMetaData struct {
 	rawLine     string
 	computation types.Option[string]
 	condition   types.Option[string]
-}
-
-type Symbol uint
-
-const (
-	EQ Symbol = 0 // ==
-	NE Symbol = 1 // !=
-	GT Symbol = 2 // >
-	GE Symbol = 3 // >=
-	LT Symbol = 4 // <
-	LE Symbol = 5 // <=
-)
-
-func (symbol Symbol) ToString() string {
-	switch symbol {
-	case EQ:
-		return "=="
-	case NE:
-		return "!="
-	case GT:
-		return ">"
-	case GE:
-		return ">="
-	case LT:
-		return "<"
-	case LE:
-		return "<="
-	default:
-		return ""
-	}
-}
-
-type Condition struct {
-	Left      string
-	Symbol    Symbol
-	Right     any
-	ValueType VariableType
-}
-
-func (condition *Condition) ToString() string {
-	switch condition.ValueType {
-	case BOOL:
-		switch condition.Right {
-		case "true":
-			return condition.Left
-		case "false":
-			return fmt.Sprintf("!%s", condition.Left)
-		}
-	default:
-		return fmt.Sprintf("%s %s %v", condition.Left, condition.Symbol.ToString(), condition.Right)
-	}
-	return ""
-}
-
-type Computation struct {
-	left      string
-	operator  string
-	right     any
-	valueType VariableType
 }
 
 type Edge struct {
