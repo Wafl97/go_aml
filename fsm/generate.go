@@ -20,6 +20,10 @@ module srcgen
 go 1.21.6
 `
 
+type Generatable interface {
+	Generate() string
+}
+
 func Generate(model *FinitStateMachine) {
 	glog := logger.New("GENERATOR")
 	glog.Infof("Generating code ...")
@@ -161,7 +165,7 @@ func generateCode(model *FinitStateMachine) string {
 				resultState = fmt.Sprintf("STATE_%s", autoEvent.resultingState)
 			}
 			autoEvents += fmt.Sprintf("\t\t\t{%s, %s, %s},\n",
-				GenerateCondition(&autoEvent.conditions),
+				autoEvent.conditions.Generate(),
 				resultState,
 				GenerateComputation("func()",
 					&autoEvent.compuatations))
@@ -182,7 +186,7 @@ func generateCode(model *FinitStateMachine) string {
 					resultState = fmt.Sprintf("STATE_%s", edge.resultingState.Get())
 				}
 				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",
-					GenerateCondition(&edge.condition2),
+					edge.condition2.Generate(),
 					resultState,
 					GenerateComputation("func()", &edge.computation2),
 					edge.metaData.rawLine)
@@ -209,7 +213,7 @@ func GenerateComputation(funcSignature string, computations *[]Computation) stri
 	}
 }
 
-func GenerateCondition(conditions *[]Condition) string {
+/* func GenerateCondition(conditions *[]Condition) string {
 	switch len(*conditions) {
 	case 0:
 		return "nil"
@@ -220,4 +224,4 @@ func GenerateCondition(conditions *[]Condition) string {
 		}
 		return fmt.Sprintf("func() bool { return %s }", strings.Join(conditionalStrings, " && "))
 	}
-}
+} */

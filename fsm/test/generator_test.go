@@ -7,61 +7,63 @@ import (
 )
 
 func TestGenerateCondition(t *testing.T) {
-
 	expectedConditionsStrings := []string{
 		"func() bool { return a == 1 }",                // TEST 1
 		"func() bool { return a >= 0.5 && b != \"\" }", // TEST 2
 		"func() bool { return !a && b && c <= 5 }",     // TEST 3
 	}
 
-	conditions := [][]fsm.Condition{
+	conditions := []fsm.Conditionals{
 		{ // TEST 1
-			{
-				Left:      "a",
-				Symbol:    fsm.EQ,
-				Right:     "1",
-				ValueType: fsm.INT,
+			Conditions: []fsm.Condition{
+				{
+					Left:      "a",
+					Symbol:    fsm.EQ,
+					Right:     "1",
+					ValueType: fsm.INT,
+				},
 			},
 		},
 		{ // TEST 2
-			{
-				Left:      "a",
-				Symbol:    fsm.GE,
-				Right:     "0.5",
-				ValueType: fsm.FLOAT,
-			},
-			{
-				Left:      "b",
-				Symbol:    fsm.NE,
-				Right:     "\"\"",
-				ValueType: fsm.STRING,
+			Conditions: []fsm.Condition{
+				{
+					Left:      "a",
+					Symbol:    fsm.GE,
+					Right:     "0.5",
+					ValueType: fsm.FLOAT,
+				},
+				{
+					Left:      "b",
+					Symbol:    fsm.NE,
+					Right:     "\"\"",
+					ValueType: fsm.STRING,
+				},
 			},
 		},
 		{ // TEST 3
-			{
-				Left:      "a",
-				Right:     "false",
-				ValueType: fsm.BOOL,
-			},
-			{
-				Left:      "b",
-				Right:     "true",
-				ValueType: fsm.BOOL,
-			},
-			{
-				Left:      "c",
-				Symbol:    fsm.LE,
-				Right:     5,
-				ValueType: fsm.INT,
+			Conditions: []fsm.Condition{
+				{
+					Left:      "a",
+					Right:     "false",
+					ValueType: fsm.BOOL,
+				},
+				{
+					Left:      "b",
+					Right:     "true",
+					ValueType: fsm.BOOL,
+				},
+				{
+					Left:      "c",
+					Symbol:    fsm.LE,
+					Right:     5,
+					ValueType: fsm.INT,
+				},
 			},
 		},
 	}
 
-	actualConditionsStrings := make([]string, len(expectedConditionsStrings))
-
-	for test := 0; test < len(actualConditionsStrings); test++ {
-		actualConditionsStrings[test] = fsm.GenerateCondition(&conditions[test])
-		if actualConditionsStrings[test] != expectedConditionsStrings[test] {
+	for test := 0; test < len(expectedConditionsStrings); test++ {
+		if conditions[test].Generate() != expectedConditionsStrings[test] {
 			t.Error("generateCondition: failed")
 		}
 	}
@@ -119,11 +121,8 @@ func TestGenerateComputation(t *testing.T) {
 		},
 	}
 
-	actualComputationsStrings := make([]string, len(expectedComputationsStrings))
-
-	for test := 0; test < len(actualComputationsStrings); test++ {
-		actualComputationsStrings[test] = fsm.GenerateComputation("func()", &computations[test])
-		if actualComputationsStrings[test] != expectedComputationsStrings[test] {
+	for test := 0; test < len(expectedComputationsStrings); test++ {
+		if fsm.GenerateComputation("func()", &computations[test]) != expectedComputationsStrings[test] {
 			t.Error("generateCondition: failed")
 		}
 	}

@@ -18,7 +18,7 @@ type Edge struct {
 	computation    types.Option[functions.Consumer[*Variables]]
 	computation2   []Computation
 	condition      types.Option[functions.Predicate[*Variables]]
-	condition2     []Condition
+	condition2     Conditionals
 	metaData       EdgeMetaData
 }
 
@@ -48,7 +48,7 @@ type EdgeBuilder struct {
 	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
 	computation2   []Computation
 	condition      types.Option[functions.Predicate[*Variables]] // DEPRECATED
-	condition2     []Condition
+	condition2     Conditionals
 	metaData       EdgeMetaData
 }
 
@@ -59,7 +59,9 @@ func newEdgeBuilder() EdgeBuilder {
 		computation:    types.None[functions.Consumer[*Variables]](),
 		computation2:   []Computation{},
 		condition:      types.None[functions.Predicate[*Variables]](),
-		condition2:     []Condition{},
+		condition2: Conditionals{
+			Conditions: []Condition{},
+		},
 		metaData: EdgeMetaData{
 			computation: types.None[string](),
 			condition:   types.None[string](),
@@ -88,8 +90,8 @@ func (builder *EdgeBuilder) And(condition functions.Predicate[*Variables]) *Edge
 	return builder
 }
 
-func (builder *EdgeBuilder) And2(conditions *[]Condition) *EdgeBuilder {
-	builder.condition2 = append(builder.condition2, *conditions...)
+func (builder *EdgeBuilder) And2(conditions *Conditionals) *EdgeBuilder {
+	builder.condition2 = *conditions
 	return builder
 }
 

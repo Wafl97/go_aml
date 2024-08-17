@@ -1,6 +1,9 @@
 package fsm
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Condition struct {
 	Left      string
@@ -22,4 +25,22 @@ func (condition *Condition) ToString() string {
 		return fmt.Sprintf("%s %s %v", condition.Left, condition.Symbol.LSToString(), condition.Right)
 	}
 	return ""
+}
+
+type Conditionals struct {
+	Generatable
+	Conditions []Condition
+}
+
+func (conditionals Conditionals) Generate() string {
+	switch len(conditionals.Conditions) {
+	case 0:
+		return "nil"
+	default:
+		conditionalStrings := make([]string, len(conditionals.Conditions))
+		for i := 0; i < len(conditionalStrings); i++ {
+			conditionalStrings[i] = (conditionals.Conditions)[i].ToString()
+		}
+		return fmt.Sprintf("func() bool { return %s }", strings.Join(conditionalStrings, " && "))
+	}
 }

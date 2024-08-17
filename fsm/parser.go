@@ -302,9 +302,11 @@ func parseComputation(computationString string, lineNumber int, builder *FsmBuil
 	return &computations
 }
 
-func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder) *[]Condition {
+func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder) *Conditionals {
 	subConditions := strings.Split(conditionString, ",")
-	conditions := make([]Condition, 0, len(subConditions))
+	conditionals := Conditionals{
+		Conditions: make([]Condition, 0, len(subConditions)),
+	}
 	for _, subCondition := range subConditions {
 		subCondition = strings.TrimSpace(subCondition)
 		var condition Condition
@@ -337,9 +339,9 @@ func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder)
 			plog.Warnf("Bad condition in transition on line %d, invalid symbol (%s) ... skipping", lineNumber+1, tokens[1])
 			continue
 		}
-		conditions = append(conditions, condition)
+		conditionals.Conditions = append(conditionals.Conditions, condition)
 	}
-	return &conditions
+	return &conditionals
 }
 
 func cleanEventString(event string) string {

@@ -8,7 +8,7 @@ import (
 )
 
 type AutoEvent struct {
-	conditions     []Condition
+	conditions     Conditionals
 	compuatations  []Computation
 	resultingState string
 	terminate      mode.Mode
