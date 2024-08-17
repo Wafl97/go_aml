@@ -28,7 +28,6 @@ func (condition *Condition) ToString() string {
 }
 
 type Conditionals struct {
-	IGenerate
 	Conditions []Condition
 }
 

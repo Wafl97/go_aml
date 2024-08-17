@@ -19,10 +19,6 @@ module srcgen
 go 1.21.6
 `
 
-type IGenerate interface {
-	Generate() string
-}
-
 func Generate(model *FiniteStateMachine) {
 	glog := logger.New("GENERATOR")
 	glog.Infof("Generating code ...")

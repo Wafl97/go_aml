@@ -95,6 +95,7 @@ func (builder *StateBuilder) build() State {
 func (builder *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilder]) *StateBuilder {
 	edgeBuilder := newEdgeBuilder()
 	f(&edgeBuilder)
+	edgeBuilder.computation2.FuncSignature = "func()"
 	edge := edgeBuilder.build()
 	_, contains := builder.transitions[event]
 	if contains {
@@ -112,6 +113,5 @@ func (builder *StateBuilder) AutoRun(computations *Computational) *StateBuilder 
 
 func (builder *StateBuilder) AutoRunEvent(autoRunEvent AutoEvent) *StateBuilder {
 	builder.autoEvents = append(builder.autoEvents, autoRunEvent)
-	builder.logger.Debug("A.R.E.")
 	return builder
 }

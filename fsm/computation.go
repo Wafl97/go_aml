@@ -17,7 +17,6 @@ func (computation *Computation) ToString() string {
 }
 
 type Computational struct {
-	IGenerate
 	FuncSignature string
 	Computations  []Computation
 }

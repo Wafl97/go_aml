@@ -162,6 +162,7 @@ func checkLineIsAutoComputation(line string, lineNumber int, sb *StateBuilder, b
 		return false
 	}
 	compuations := parseComputation(autoComputation, lineNumber, builder)
+	compuations.FuncSignature = "func(event string)"
 	sb.AutoRun(compuations)
 	return true
 }
