@@ -27,7 +27,7 @@ func main() {
 	if strings.Contains(fileContents, "syntax fsm") {
 		//parser := parser2.NewParser()
 		//parser.ParseFsmString(fileContents)
-		fsm.FromString(fileContents).HasValue(func(model fsm.FinitStateMachine) {
+		fsm.FromString(fileContents).HasValue(func(model fsm.FiniteStateMachine) {
 			fsm.Generate(&model)
 			//summary := runners.RunAsRandom(&model, 100)
 			//summary.DeadlockState.HasValue(func(s string) {

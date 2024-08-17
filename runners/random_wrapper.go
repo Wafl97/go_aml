@@ -15,7 +15,7 @@ type Summary struct {
 	DeadlockState types.Option[string]
 }
 
-func RunAsRandom(fsm *fsm.FinitStateMachine, iterations int) Summary {
+func RunAsRandom(fsm *fsm.FiniteStateMachine, iterations int) Summary {
 	summary := Summary{
 		Path:          make([]string, iterations),
 		Occurences:    make(map[string]int, len(fsm.GetRegisteredStates())),

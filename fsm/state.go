@@ -9,7 +9,7 @@ import (
 
 type AutoEvent struct {
 	conditions     Conditionals
-	compuatations  []Computation
+	compuatations  Computational
 	resultingState string
 	terminate      mode.Mode
 }
@@ -17,7 +17,7 @@ type AutoEvent struct {
 type State struct {
 	logger              logger.Logger
 	name                string
-	defaultComputations []Computation
+	defaultComputations Computational
 	autoEvents          []AutoEvent
 	transitions         map[string][]*Edge
 	cache               map[string]any
@@ -65,15 +65,18 @@ func (state *State) GetName() string {
 type StateBuilder struct {
 	logger              logger.Logger
 	name                string
-	defaultComputations []Computation
+	defaultComputations Computational
 	autoEvents          []AutoEvent
 	transitions         map[string][]*Edge
 }
 
 func newStateBuilder(state string) StateBuilder {
 	return StateBuilder{
-		logger:      logger.New(state + "(Builder)"),
-		name:        state,
+		logger: logger.New(state + "(Builder)"),
+		name:   state,
+		defaultComputations: Computational{
+			FuncSignature: "func(event string)",
+		},
 		transitions: map[string][]*Edge{},
 	}
 }
@@ -102,7 +105,7 @@ func (builder *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilde
 	return builder
 }
 
-func (builder *StateBuilder) AutoRun(computations *[]Computation) *StateBuilder {
+func (builder *StateBuilder) AutoRun(computations *Computational) *StateBuilder {
 	builder.defaultComputations = *computations
 	return builder
 }

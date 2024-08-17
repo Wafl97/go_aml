@@ -11,7 +11,7 @@ import (
 
 var plog logger.Logger
 
-func FromString(str string) types.Option[FinitStateMachine] {
+func FromString(str string) types.Option[FiniteStateMachine] {
 	plog = logger.New("PARSER")
 	plog.Info("Building model ...")
 
@@ -39,7 +39,7 @@ func FromString(str string) types.Option[FinitStateMachine] {
 
 	if builder.initialState.IsNone() {
 		plog.Error("No initial state provided")
-		return types.None[FinitStateMachine]()
+		return types.None[FiniteStateMachine]()
 	}
 	plog.Info("Building complete")
 	return types.Some(builder.Build())
@@ -178,6 +178,7 @@ func checkLineIsAutoRunTermination(line string, lineNumber int, sb *StateBuilder
 	var autoRunEvent AutoEvent
 	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
 	autoRunEvent.terminate = mode.TERMINATE
+	autoRunEvent.compuatations.FuncSignature = "func()"
 	sb.AutoRunEvent(autoRunEvent)
 	return true
 
@@ -206,6 +207,7 @@ func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, buil
 	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
 	autoRunEvent.terminate = mode.CONTINUE
 	autoRunEvent.resultingState = nextState
+	autoRunEvent.compuatations.FuncSignature = "func()"
 	sb.AutoRunEvent(autoRunEvent)
 	return true
 }
@@ -264,9 +266,11 @@ func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state 
 	return true
 }
 
-func parseComputation(computationString string, lineNumber int, builder *FsmBuilder) *[]Computation {
+func parseComputation(computationString string, lineNumber int, builder *FsmBuilder) *Computational {
 	subComputations := strings.Split(computationString, ",")
-	computations := make([]Computation, 0, len(subComputations))
+	computational := Computational{
+		Computations: make([]Computation, 0, len(subComputations)),
+	}
 	for _, subComputation := range subComputations {
 		subComputation = strings.TrimSpace(subComputation)
 		var computation Computation
@@ -297,9 +301,9 @@ func parseComputation(computationString string, lineNumber int, builder *FsmBuil
 			continue
 		}
 		computation.Right = tokens[2]
-		computations = append(computations, computation)
+		computational.Computations = append(computational.Computations, computation)
 	}
-	return &computations
+	return &computational
 }
 
 func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder) *Conditionals {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/logger"
@@ -20,11 +19,11 @@ module srcgen
 go 1.21.6
 `
 
-type Generatable interface {
+type IGenerate interface {
 	Generate() string
 }
 
-func Generate(model *FinitStateMachine) {
+func Generate(model *FiniteStateMachine) {
 	glog := logger.New("GENERATOR")
 	glog.Infof("Generating code ...")
 	os.MkdirAll("srcgen", os.ModeDir)
@@ -139,7 +138,7 @@ func runAutoEvents(event string) {
 }
 `
 
-func generateCode(model *FinitStateMachine) string {
+func generateCode(model *FiniteStateMachine) string {
 	var variables string
 	for varName, varValue := range model.variables.values {
 		variables += fmt.Sprintf("\t%s = %v\n", varName, varValue)
@@ -150,10 +149,11 @@ func generateCode(model *FinitStateMachine) string {
 	for stateName, state := range model.states {
 		states += fmt.Sprintf("\tSTATE_%s State = %d\n", stateName, stateCount)
 		var defaultComputation string
-		if state.defaultComputations == nil {
+		if len(state.defaultComputations.Computations) == 0 {
 			defaultComputation = "nil"
 		} else {
-			defaultComputation = GenerateComputation("func(event string)", &state.defaultComputations)
+			//defaultComputation = GenerateComputation("func(event string)", &state.defaultComputations)
+			defaultComputation = state.defaultComputations.Generate()
 		}
 		var autoEvents string = ""
 		for _, autoEvent := range state.autoEvents {
@@ -167,8 +167,9 @@ func generateCode(model *FinitStateMachine) string {
 			autoEvents += fmt.Sprintf("\t\t\t{%s, %s, %s},\n",
 				autoEvent.conditions.Generate(),
 				resultState,
-				GenerateComputation("func()",
-					&autoEvent.compuatations))
+				//GenerateComputation("func()", &autoEvent.compuatations),
+				autoEvent.compuatations.Generate(),
+			)
 		}
 		transitions += fmt.Sprintf("\t{\"%s\",\n\t\t%s,\n\t\t[]Transition{ /* AUTO-EVENTS */\n%s\t\t},\n\t\tmap[string][]Transition{ /* STATE_%s */\n",
 			stateName,
@@ -188,7 +189,8 @@ func generateCode(model *FinitStateMachine) string {
 				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",
 					edge.condition2.Generate(),
 					resultState,
-					GenerateComputation("func()", &edge.computation2),
+					//GenerateComputation("func()", &edge.computation2),
+					edge.computation2.Generate(),
 					edge.metaData.rawLine)
 			}
 			transitions += "\t\t\t},\n"
@@ -200,7 +202,7 @@ func generateCode(model *FinitStateMachine) string {
 	return fmt.Sprintf(codeStructure, GENERATOR_VERSION, variables, states, transitions, initialState)
 }
 
-func GenerateComputation(funcSignature string, computations *[]Computation) string {
+/* func GenerateComputation(funcSignature string, computations *[]Computation) string {
 	switch len(*computations) {
 	case 0:
 		return "nil"
@@ -211,7 +213,7 @@ func GenerateComputation(funcSignature string, computations *[]Computation) stri
 		}
 		return fmt.Sprintf("%s { %s }", funcSignature, strings.Join(computationStrings, "; "))
 	}
-}
+} */
 
 /* func GenerateCondition(conditions *[]Condition) string {
 	switch len(*conditions) {

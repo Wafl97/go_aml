@@ -7,7 +7,7 @@ import (
 	"github.com/Wafl97/go_aml/util/types"
 )
 
-type FinitStateMachine struct {
+type FiniteStateMachine struct {
 	cause        string
 	mode         mode.Mode
 	logger       logger.Logger
@@ -18,7 +18,7 @@ type FinitStateMachine struct {
 	cache        map[string]any
 }
 
-func (fsm *FinitStateMachine) Fire(event string) {
+func (fsm *FiniteStateMachine) Fire(event string) {
 	fsm.logger.Debugf("Firing %s", event)
 	maybeState := fsm.currentState
 	if maybeState.IsNone() {
@@ -46,7 +46,7 @@ func (fsm *FinitStateMachine) Fire(event string) {
 	fsm.currentState = types.Some(newState)
 }
 
-func (fsm *FinitStateMachine) GetRegisteredStates() []string {
+func (fsm *FiniteStateMachine) GetRegisteredStates() []string {
 	cached, contains := fsm.cache["states-keys"]
 	if contains {
 		return cached.([]string)
@@ -59,19 +59,19 @@ func (fsm *FinitStateMachine) GetRegisteredStates() []string {
 	return cache
 }
 
-func (fsm *FinitStateMachine) GetMode() mode.Mode {
+func (fsm *FiniteStateMachine) GetMode() mode.Mode {
 	return fsm.mode
 }
 
-func (fsm *FinitStateMachine) GetCause() string {
+func (fsm *FiniteStateMachine) GetCause() string {
 	return fsm.cause
 }
 
-func (fsm *FinitStateMachine) GetModelName() string {
+func (fsm *FiniteStateMachine) GetModelName() string {
 	return fsm.modelName
 }
 
-func (fsm *FinitStateMachine) GetCurrentState() types.Option[*State] {
+func (fsm *FiniteStateMachine) GetCurrentState() types.Option[*State] {
 	return fsm.currentState
 }
 
@@ -122,11 +122,11 @@ func (fsm *FsmBuilder) Initial(state string) *FsmBuilder {
 	return fsm
 }
 
-func (fsm *FsmBuilder) Build() FinitStateMachine {
+func (fsm *FsmBuilder) Build() FiniteStateMachine {
 	if len(fsm.modelName) == 0 {
 		fsm.modelName = "Default (FSM)"
 	}
-	return FinitStateMachine{
+	return FiniteStateMachine{
 		mode:         mode.CONTINUE,
 		logger:       logger.New(fsm.modelName),
 		modelName:    fsm.modelName,
