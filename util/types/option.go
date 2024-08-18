@@ -1,6 +1,6 @@
 package types
 
-type Option[T any] struct {
+type Option[T any] struct { // DEPRECATED
 	value    T
 	hasValue bool
 }

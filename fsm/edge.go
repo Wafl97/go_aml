@@ -7,26 +7,29 @@ import (
 )
 
 type EdgeMetaData struct {
-	rawLine     string
-	computation types.Option[string]
-	condition   types.Option[string]
+	rawLine string
+	//computation types.Option[string]
+	computation *string
+	//condition   types.Option[string]
+	condition *string
 }
 
 type Edge struct {
-	terminate      mode.Mode
-	resultingState types.Option[string]
-	computation    types.Option[functions.Consumer[*Variables]]
+	terminate mode.Mode
+	//resultingState types.Option[string]
+	resultingState *string
+	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
 	computation2   Computational
-	condition      types.Option[functions.Predicate[*Variables]]
+	condition      types.Option[functions.Predicate[*Variables]] // DEPRECATED
 	condition2     Conditionals
 	metaData       EdgeMetaData
 }
 
-func (edge *Edge) checkCondition(variables *Variables) (types.Option[string], mode.Mode) {
+func (edge *Edge) checkCondition(variables *Variables) (*string, mode.Mode) {
 	next := edge.resultingState
 	edge.condition.HasValue(func(p functions.Predicate[*Variables]) {
 		if !p(variables) {
-			next = types.None[string]()
+			next = nil
 			return
 		}
 		edge.compute(variables)
@@ -43,8 +46,9 @@ func (edge *Edge) compute(variables *Variables) {
 }
 
 type EdgeBuilder struct {
-	terminate      mode.Mode
-	resultingState types.Option[string]
+	terminate mode.Mode
+	//resultingState types.Option[string]
+	resultingState *string
 	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
 	computation2   Computational
 	condition      types.Option[functions.Predicate[*Variables]] // DEPRECATED
@@ -55,7 +59,7 @@ type EdgeBuilder struct {
 func newEdgeBuilder() EdgeBuilder {
 	return EdgeBuilder{
 		terminate:      mode.CONTINUE,
-		resultingState: types.None[string](),
+		resultingState: nil,
 		computation:    types.None[functions.Consumer[*Variables]](),
 		computation2: Computational{
 			Computations: []Computation{},
@@ -65,8 +69,8 @@ func newEdgeBuilder() EdgeBuilder {
 			Conditions: []Condition{},
 		},
 		metaData: EdgeMetaData{
-			computation: types.None[string](),
-			condition:   types.None[string](),
+			computation: nil,
+			condition:   nil,
 		},
 	}
 }
@@ -82,7 +86,7 @@ func (builder *EdgeBuilder) End() *EdgeBuilder {
 }
 
 func (builder *EdgeBuilder) Then(state string) *EdgeBuilder {
-	builder.resultingState = types.Some(state)
+	builder.resultingState = &state
 	return builder
 }
 
@@ -98,7 +102,7 @@ func (builder *EdgeBuilder) And2(conditions *Conditionals) *EdgeBuilder {
 }
 
 func (builder *EdgeBuilder) AndMeta(metaData string) *EdgeBuilder {
-	builder.metaData.condition = types.Some(metaData)
+	builder.metaData.condition = &metaData
 	return builder
 }
 
@@ -114,7 +118,7 @@ func (builder *EdgeBuilder) Run2(computations *Computational) *EdgeBuilder {
 }
 
 func (builder *EdgeBuilder) RunMeta(metaData string) *EdgeBuilder {
-	builder.metaData.computation = types.Some(metaData)
+	builder.metaData.computation = &metaData
 	return builder
 }
 

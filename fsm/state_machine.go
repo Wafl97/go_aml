@@ -4,7 +4,6 @@ import (
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/logger"
-	"github.com/Wafl97/go_aml/util/types"
 )
 
 type FiniteStateMachine struct {
@@ -13,37 +12,35 @@ type FiniteStateMachine struct {
 	logger       logger.Logger
 	modelName    string
 	states       map[string]*State
-	currentState types.Option[*State]
+	currentState *State
 	variables    Variables
 	cache        map[string]any
 }
 
 func (fsm *FiniteStateMachine) Fire(event string) {
 	fsm.logger.Debugf("Firing %s", event)
-	maybeState := fsm.currentState
-	if maybeState.IsNone() {
+	if fsm.currentState == nil {
 		fsm.cause = "No current state"
 		fsm.mode = mode.DEADLOCK
 		return
 	}
-	currentState := maybeState.Get()
-	fsm.logger.Debugf("Checking %s ...", currentState.GetName())
-	state, currentMode := currentState.fire(event, &fsm.variables)
+	fsm.logger.Debugf("Checking %s ...", fsm.currentState.GetName())
+	state, currentMode := fsm.currentState.fire(event, &fsm.variables)
 	fsm.mode = currentMode
-	if state.IsNone() {
+	if state == nil {
 		fsm.cause = "No resulting state from transition"
 		fsm.mode = mode.DEADLOCK
 		return
 	}
-	newStateName := state.Get()
-	fsm.logger.Debugf("Transition [%s] -> [%s]", fsm.GetCurrentState().Get().GetName(), newStateName)
-	newState, hasState := fsm.states[newStateName]
+	newStateName := state
+	fsm.logger.Debugf("Transition [%s] -> [%s]", fsm.GetCurrentState().GetName(), *newStateName)
+	newState, hasState := fsm.states[*newStateName]
 	if !hasState {
 		fsm.cause = "State not found from transition"
 		fsm.mode = mode.CRASH
-		fsm.currentState = types.None[*State]()
+		fsm.currentState = nil
 	}
-	fsm.currentState = types.Some(newState)
+	fsm.currentState = newState
 }
 
 func (fsm *FiniteStateMachine) GetRegisteredStates() []string {
@@ -71,7 +68,7 @@ func (fsm *FiniteStateMachine) GetModelName() string {
 	return fsm.modelName
 }
 
-func (fsm *FiniteStateMachine) GetCurrentState() types.Option[*State] {
+func (fsm *FiniteStateMachine) GetCurrentState() *State {
 	return fsm.currentState
 }
 
@@ -79,7 +76,7 @@ type FsmBuilder struct {
 	logger       logger.Logger
 	modelName    string
 	states       map[string]*State
-	initialState types.Option[*State]
+	initialState *State
 	variables    Variables
 }
 
@@ -89,7 +86,7 @@ func NewFsmBuilder() FsmBuilder {
 		logger:       builderLogger,
 		states:       map[string]*State{},
 		modelName:    "",
-		initialState: types.None[*State](),
+		initialState: nil,
 		variables:    NewVariables(),
 	}
 }
@@ -118,7 +115,7 @@ func (fsm *FsmBuilder) Initial(state string) *FsmBuilder {
 		//fsm.logger.Error("Initial state '" + state + "' is invalid")
 		return fsm
 	}
-	fsm.initialState = types.Some(st)
+	fsm.initialState = st
 	return fsm
 }
 

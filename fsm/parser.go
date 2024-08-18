@@ -1,17 +1,17 @@
 package fsm
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/logger"
-	"github.com/Wafl97/go_aml/util/types"
 )
 
 var plog logger.Logger
 
-func FromString(str string) types.Option[FiniteStateMachine] {
+func FromString(str string) (*FiniteStateMachine, error) {
 	plog = logger.New("PARSER")
 	plog.Info("Building model ...")
 
@@ -37,12 +37,13 @@ func FromString(str string) types.Option[FiniteStateMachine] {
 		lineNumber = handleStateDef(line, lineNumber, &builder, &lines)
 	}
 
-	if builder.initialState.IsNone() {
+	if builder.initialState == nil {
 		plog.Error("No initial state provided")
-		return types.None[FiniteStateMachine]()
+		return nil, fmt.Errorf("fromString: invalid model")
 	}
 	plog.Info("Building complete")
-	return types.Some(builder.Build())
+	model := builder.Build()
+	return &model, nil
 }
 
 func handleVariableDeclaration(line string, lineNumber int, builder *FsmBuilder) {
@@ -314,36 +315,38 @@ func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder)
 	}
 	for _, subCondition := range subConditions {
 		subCondition = strings.TrimSpace(subCondition)
-		var condition Condition
+		//var condition Condition
 		tokens := strings.SplitN(subCondition, " ", 3)
 		if len(tokens) != 3 {
 			plog.Warnf("Bad condition for transition on line %d, cannot infer condition (%s) ... skipping", lineNumber+1, subCondition)
 			continue
 		}
-		condition.Left = tokens[0]
-		if _, isDeclared := builder.variables.values[condition.Left]; !isDeclared {
-			plog.Warnf("Bad condition for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, condition.Left)
+		//condition.Left = tokens[0]
+		if _, isDeclared := builder.variables.values[tokens[0]]; !isDeclared {
+			plog.Warnf("Bad condition for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, tokens[0])
 			continue
 		}
-		condition.Right = tokens[2]
-		condition.ValueType = builder.variables.types[condition.Left]
+		//condition.Right = tokens[2]
+		//condition.ValueType = builder.variables.types[tokens[0]]
+		var symbol LogicSymbol
 		switch tokens[1] {
 		case "==":
-			condition.Symbol = EQUAL
+			symbol = EQUAL
 		case "!=":
-			condition.Symbol = NOT_EQUAL
+			symbol = NOT_EQUAL
 		case ">=":
-			condition.Symbol = GRATER_THAN_OR_EQUAL
+			symbol = GRATER_THAN_OR_EQUAL
 		case ">":
-			condition.Symbol = GRATER_THAN
+			symbol = GRATER_THAN
 		case "<=":
-			condition.Symbol = LESS_THAN_OR_EQUAL
+			symbol = LESS_THAN_OR_EQUAL
 		case "<":
-			condition.Symbol = LESS_THAN
+			symbol = LESS_THAN
 		default:
 			plog.Warnf("Bad condition in transition on line %d, invalid symbol (%s) ... skipping", lineNumber+1, tokens[1])
 			continue
 		}
+		condition := NewCondition(tokens[0], symbol, tokens[2], builder.variables.types[tokens[0]])
 		conditionals.Conditions = append(conditionals.Conditions, condition)
 	}
 	return &conditionals

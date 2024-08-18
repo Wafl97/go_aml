@@ -43,15 +43,14 @@ func TestFSM(t *testing.T) {
 	if sm.GetModelName() != MODEL_NAME {
 		t.Fail()
 	}
-	sm.GetCurrentState().HasValue(func(s *fsm.State) {
-		if s.GetName() != STATE_1 {
-			t.Fail()
-		}
-	})
+	if sm.GetCurrentState() == nil || sm.GetCurrentState().GetName() != STATE_1 {
+		t.Fail()
+	}
 	sm.Fire(EVENT_1)
 }
 
 func TestFullModel(t *testing.T) {
+	logger.SetLogLevel(logger.DEBUG)
 	log := logger.New("TESTING")
 	tmb := fsm.NewFsmBuilder()
 	tmb.
@@ -143,6 +142,8 @@ func TestFullModel(t *testing.T) {
 		Initial("S1")
 
 	tm := tmb.Build()
+
+	log.Infof("%v", tm)
 
 	sum := runners.RunAsRandom(&tm, 1000)
 	log.Infof("Path: %v", sum.Path)

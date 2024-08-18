@@ -4,7 +4,6 @@ import (
 	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/logger"
-	"github.com/Wafl97/go_aml/util/types"
 )
 
 type AutoEvent struct {
@@ -27,22 +26,22 @@ func (state *State) GetTransitions() map[string][]*Edge {
 	return state.transitions
 }
 
-func (state *State) fire(event string, variables *Variables) (types.Option[string], mode.Mode) {
+func (state *State) fire(event string, variables *Variables) (*string, mode.Mode) {
 	arr, containsEvent := state.transitions[event]
 	if !containsEvent {
-		return types.None[string](), mode.DEADLOCK
+		return nil, mode.DEADLOCK
 	}
 	state.logger.Debugf("Checking %d edge(s) ...", len(arr))
 	for _, edge := range arr {
 		res, newMode := edge.checkCondition(variables)
-		if res.IsSome() {
+		if res != nil {
 			return res, mode.CONTINUE
 		}
 		if newMode == mode.TERMINATE {
 			return res, newMode
 		}
 	}
-	return types.None[string](), mode.DEADLOCK
+	return nil, mode.DEADLOCK
 }
 
 func (state *State) GetEdgeTriggers() []string {

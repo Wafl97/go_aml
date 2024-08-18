@@ -16,48 +16,20 @@ func TestGenerateCondition(t *testing.T) {
 	conditions := []fsm.Conditionals{
 		{ // TEST 1
 			Conditions: []fsm.Condition{
-				{
-					Left:      "a",
-					Symbol:    fsm.EQ,
-					Right:     "1",
-					ValueType: fsm.INT,
-				},
+				fsm.NewCondition("a", fsm.EQ, "1", fsm.INT),
 			},
 		},
 		{ // TEST 2
 			Conditions: []fsm.Condition{
-				{
-					Left:      "a",
-					Symbol:    fsm.GE,
-					Right:     "0.5",
-					ValueType: fsm.FLOAT,
-				},
-				{
-					Left:      "b",
-					Symbol:    fsm.NE,
-					Right:     "\"\"",
-					ValueType: fsm.STRING,
-				},
+				fsm.NewCondition("a", fsm.GE, "0.5", fsm.FLOAT),
+				fsm.NewCondition("b", fsm.NE, "\"\"", fsm.STRING),
 			},
 		},
 		{ // TEST 3
 			Conditions: []fsm.Condition{
-				{
-					Left:      "a",
-					Right:     "false",
-					ValueType: fsm.BOOL,
-				},
-				{
-					Left:      "b",
-					Right:     "true",
-					ValueType: fsm.BOOL,
-				},
-				{
-					Left:      "c",
-					Symbol:    fsm.LE,
-					Right:     5,
-					ValueType: fsm.INT,
-				},
+				fsm.NewCondition("a", fsm.EQ, "false", fsm.BOOL),
+				fsm.NewCondition("b", fsm.EQ, "true", fsm.BOOL),
+				fsm.NewCondition("c", fsm.LE, 5, fsm.INT),
 			},
 		},
 	}

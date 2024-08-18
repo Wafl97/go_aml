@@ -15,13 +15,13 @@ type Summary struct {
 	DeadlockState types.Option[string]
 }
 
-func RunAsRandom(fsm *fsm.FiniteStateMachine, iterations int) Summary {
+func RunAsRandom(model *fsm.FiniteStateMachine, iterations int) Summary {
 	summary := Summary{
 		Path:          make([]string, iterations),
-		Occurences:    make(map[string]int, len(fsm.GetRegisteredStates())),
+		Occurences:    make(map[string]int, len(model.GetRegisteredStates())),
 		DeadlockState: types.None[string](),
 	}
-	currentState := fsm.GetCurrentState().Get()
+	currentState := model.GetCurrentState()
 	summary.Path = append(summary.Path, currentState.GetName())
 	summary.Occurences[currentState.GetName()] = 1
 	log := logger.New("RANDOM WRAPPER")
@@ -32,25 +32,25 @@ func RunAsRandom(fsm *fsm.FiniteStateMachine, iterations int) Summary {
 		var currentMode mode.Mode
 		if len(arr) > 0 {
 			randomChoise := arr[rand.Intn(len(arr))]
-			fsm.Fire(randomChoise)
-			currentMode = fsm.GetMode()
+			model.Fire(randomChoise)
+			currentMode = model.GetMode()
 		} else {
 			currentMode = mode.DEADLOCK
 		}
 		switch currentMode {
 		case mode.CONTINUE:
-			currentState = fsm.GetCurrentState().Get()
+			currentState = model.GetCurrentState()
 			summary.Path[i] = currentState.GetName()
 			summary.Occurences[currentState.GetName()] += 1
 		case mode.CRASH:
-			log.Errorf("Model crashed. Cause: %s", fsm.GetCause())
+			log.Errorf("Model crashed. Cause: %s", model.GetCause())
 			return summary
 		case mode.DEADLOCK:
 			log.Error("Deadlock! Exiting ...")
-			summary.DeadlockState = types.Some(fsm.GetCurrentState().Get().GetName())
+			summary.DeadlockState = types.Some(model.GetCurrentState().GetName())
 			return summary
 		case mode.TERMINATE:
-			log.Infof("Model terminated in state %s", fsm.GetCurrentState().Get().GetName())
+			log.Infof("Model terminated in state %s", model.GetCurrentState().GetName())
 			return summary
 		}
 	}

@@ -25,19 +25,10 @@ func main() {
 	}
 	fileContents := string(fileContentsBytes)
 	if strings.Contains(fileContents, "syntax fsm") {
-		//parser := parser2.NewParser()
-		//parser.ParseFsmString(fileContents)
-		fsm.FromString(fileContents).HasValue(func(model fsm.FiniteStateMachine) {
-			fsm.Generate(&model)
-			//summary := runners.RunAsRandom(&model, 100)
-			//summary.DeadlockState.HasValue(func(s string) {
-			//	log.Errorf("Model reached a deadlock in state %s", s)
-			//})
-			//log.Info("Done!")
-		}).Else(func() {
-			log.Error("Model is invalid ... exiting")
-		})
+		model, err := fsm.FromString(fileContents)
+		if err != nil {
+			log.Error(err.Error())
+		}
+		fsm.Generate(model)
 	}
-
-	//runners.RunAsCli(&tm)
 }

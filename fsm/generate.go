@@ -180,7 +180,7 @@ func generateCode(model *FiniteStateMachine) string {
 				case mode.TERMINATE:
 					resultState = "TERMINATION_STATE"
 				default:
-					resultState = fmt.Sprintf("STATE_%s", edge.resultingState.Get())
+					resultState = fmt.Sprintf("STATE_%s", *edge.resultingState)
 				}
 				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",
 					edge.condition2.Generate(),
@@ -194,7 +194,7 @@ func generateCode(model *FiniteStateMachine) string {
 		transitions += "\t\t},\n\t},\n"
 		stateCount++
 	}
-	initialState := model.currentState.Get().GetName()
+	initialState := model.currentState.GetName()
 	return fmt.Sprintf(codeStructure, GENERATOR_VERSION, variables, states, transitions, initialState)
 }
 

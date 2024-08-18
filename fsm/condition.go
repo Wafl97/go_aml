@@ -6,23 +6,32 @@ import (
 )
 
 type Condition struct {
-	Left      string
-	Symbol    LogicSymbol
-	Right     any
-	ValueType VariableType
+	left      string
+	symbol    LogicSymbol
+	right     any
+	valueType VariableType
+}
+
+func NewCondition(left string, symbol LogicSymbol, right any, valueType VariableType) Condition {
+	return Condition{
+		left:      left,
+		symbol:    symbol,
+		right:     right,
+		valueType: valueType,
+	}
 }
 
 func (condition *Condition) ToString() string {
-	switch condition.ValueType {
+	switch condition.valueType {
 	case BOOL:
-		switch condition.Right {
+		switch condition.right {
 		case "true":
-			return condition.Left
+			return condition.left
 		case "false":
-			return fmt.Sprintf("!%s", condition.Left)
+			return fmt.Sprintf("!%s", condition.left)
 		}
 	default:
-		return fmt.Sprintf("%s %s %v", condition.Left, condition.Symbol.LSToString(), condition.Right)
+		return fmt.Sprintf("%s %s %v", condition.left, condition.symbol.LSToString(), condition.right)
 	}
 	return ""
 }
