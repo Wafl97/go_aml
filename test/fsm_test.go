@@ -50,7 +50,7 @@ func TestFSM(t *testing.T) {
 }
 
 func TestFullModel(t *testing.T) {
-	logger.SetLogLevel(logger.DEBUG)
+	logger.SetLogLevel(logger.INFO)
 	log := logger.New("TESTING")
 	tmb := fsm.NewFsmBuilder()
 	tmb.
@@ -136,7 +136,7 @@ func TestFullModel(t *testing.T) {
 		Given("SX", func(sb *fsm.StateBuilder) {
 			sb.
 				When("TO-S1", func(eb *fsm.EdgeBuilder) {
-					eb.And(func(v *fsm.Variables) bool { return v.Get("INT").(int) > 0 }).Then("S1")
+					eb.And(func(v *fsm.Variables) bool { return v.Get("INT").(int) >= 0 }).Then("S1")
 				})
 		}).
 		Initial("S1")
@@ -145,12 +145,15 @@ func TestFullModel(t *testing.T) {
 
 	log.Infof("%v", tm)
 
-	sum := runners.RunAsRandom(&tm, 1000)
+	sum, err := runners.RunAsRandom(&tm, 1000)
+	if err != nil {
+		log.Error(err.Error())
+	}
 	log.Infof("Path: %v", sum.Path)
-	log.Infof("Occurences: %v", sum.Occurences)
-	sum.DeadlockState.HasValue(func(s string) {
-		log.Infof("Deadlock State: %v", s)
-	})
+	log.Infof("Occurrences: %v", sum.Occurrences)
+	if state := sum.DeadlockState; state != nil {
+		log.Infof("Deadlock State: %s", *state)
+	}
 }
 
 func FuzzVariables(f *testing.F) {

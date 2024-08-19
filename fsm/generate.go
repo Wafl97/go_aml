@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/logger"
 )
 
@@ -154,17 +153,17 @@ func generateCode(model *FiniteStateMachine) string {
 		var autoEvents string = ""
 		for _, autoEvent := range state.autoEvents {
 			var resultState string
-			switch autoEvent.terminate {
-			case mode.TERMINATE:
+			switch autoEvent.terminate2 {
+			case true:
 				resultState = "TERMINATION_STATE"
-			default:
+			case false:
 				resultState = fmt.Sprintf("STATE_%s", autoEvent.resultingState)
 			}
 			autoEvents += fmt.Sprintf("\t\t\t{%s, %s, %s},\n",
 				autoEvent.conditions.Generate(),
 				resultState,
 				//GenerateComputation("func()", &autoEvent.compuatations),
-				autoEvent.compuatations.Generate(),
+				autoEvent.computations.Generate(),
 			)
 		}
 		transitions += fmt.Sprintf("\t{\"%s\",\n\t\t%s,\n\t\t[]Transition{ /* AUTO-EVENTS */\n%s\t\t},\n\t\tmap[string][]Transition{ /* STATE_%s */\n",
@@ -176,10 +175,10 @@ func generateCode(model *FiniteStateMachine) string {
 			transitions += fmt.Sprintf("\t\t\t\"%s\": {\n", event)
 			for _, edge := range edges {
 				var resultState string
-				switch edge.terminate {
-				case mode.TERMINATE:
+				switch edge.terminate2 {
+				case true:
 					resultState = "TERMINATION_STATE"
-				default:
+				case false:
 					resultState = fmt.Sprintf("STATE_%s", *edge.resultingState)
 				}
 				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",

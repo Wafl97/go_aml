@@ -1,7 +1,6 @@
 package fsm
 
 import (
-	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/types"
 )
@@ -15,7 +14,8 @@ type EdgeMetaData struct {
 }
 
 type Edge struct {
-	terminate mode.Mode
+	//terminate  mode.Mode // DEPRECATED
+	terminate2 bool
 	//resultingState types.Option[string]
 	resultingState *string
 	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
@@ -25,7 +25,7 @@ type Edge struct {
 	metaData       EdgeMetaData
 }
 
-func (edge *Edge) checkCondition(variables *Variables) (*string, mode.Mode) {
+func (edge *Edge) checkCondition(variables *Variables) (*string, error) {
 	next := edge.resultingState
 	edge.condition.HasValue(func(p functions.Predicate[*Variables]) {
 		if !p(variables) {
@@ -36,7 +36,10 @@ func (edge *Edge) checkCondition(variables *Variables) (*string, mode.Mode) {
 	}).Else(func() {
 		edge.compute(variables)
 	})
-	return next, edge.terminate
+	if edge.terminate2 {
+		return nil, TerminateError
+	}
+	return next, nil
 }
 
 func (edge *Edge) compute(variables *Variables) {
@@ -46,7 +49,8 @@ func (edge *Edge) compute(variables *Variables) {
 }
 
 type EdgeBuilder struct {
-	terminate mode.Mode
+	//terminate  mode.Mode // DEPRECATED
+	terminate2 bool
 	//resultingState types.Option[string]
 	resultingState *string
 	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
@@ -58,7 +62,8 @@ type EdgeBuilder struct {
 
 func newEdgeBuilder() EdgeBuilder {
 	return EdgeBuilder{
-		terminate:      mode.CONTINUE,
+		//terminate:      mode.CONTINUE,
+		terminate2:     false,
 		resultingState: nil,
 		computation:    types.None[functions.Consumer[*Variables]](),
 		computation2: Computational{
@@ -81,7 +86,8 @@ func (builder *EdgeBuilder) MetaData(metaData string) *EdgeBuilder {
 }
 
 func (builder *EdgeBuilder) End() *EdgeBuilder {
-	builder.terminate = mode.TERMINATE
+	//builder.terminate = mode.TERMINATE
+	builder.terminate2 = true
 	return builder
 }
 
@@ -124,7 +130,8 @@ func (builder *EdgeBuilder) RunMeta(metaData string) *EdgeBuilder {
 
 func (builder *EdgeBuilder) build() Edge {
 	return Edge{
-		terminate:      builder.terminate,
+		//terminate:      builder.terminate,
+		terminate2:     builder.terminate2,
 		resultingState: builder.resultingState,
 		computation:    builder.computation,
 		computation2:   builder.computation2,

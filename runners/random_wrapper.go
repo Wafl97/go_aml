@@ -1,59 +1,49 @@
 package runners
 
 import (
+	"errors"
+	"fmt"
 	"math/rand"
 
 	"github.com/Wafl97/go_aml/fsm"
-	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/logger"
-	"github.com/Wafl97/go_aml/util/types"
 )
 
 type Summary struct {
 	Path          []string
-	Occurences    map[string]int
-	DeadlockState types.Option[string]
+	Occurrences   map[string]int
+	DeadlockState *string
 }
 
-func RunAsRandom(model *fsm.FiniteStateMachine, iterations int) Summary {
+func RunAsRandom(model *fsm.FiniteStateMachine, iterations int) (Summary, error) {
 	summary := Summary{
 		Path:          make([]string, iterations),
-		Occurences:    make(map[string]int, len(model.GetRegisteredStates())),
-		DeadlockState: types.None[string](),
+		Occurrences:   make(map[string]int, len(model.GetRegisteredStates())),
+		DeadlockState: nil,
 	}
 	currentState := model.GetCurrentState()
 	summary.Path = append(summary.Path, currentState.GetName())
-	summary.Occurences[currentState.GetName()] = 1
+	summary.Occurrences[currentState.GetName()] = 1
 	log := logger.New("RANDOM WRAPPER")
 	log.Infof("Running for %d iterations", iterations)
 	for i := 1; i < iterations; i++ {
-		//time.Sleep(time.Duration(5) * time.Millisecond)
 		arr := currentState.GetEdgeTriggers()
-		var currentMode mode.Mode
-		if len(arr) > 0 {
-			randomChoise := arr[rand.Intn(len(arr))]
-			model.Fire(randomChoise)
-			currentMode = model.GetMode()
-		} else {
-			currentMode = mode.DEADLOCK
+		if len(arr) == 0 {
+			return summary, fsm.NewDeadlockError("no possible transitions")
 		}
-		switch currentMode {
-		case mode.CONTINUE:
-			currentState = model.GetCurrentState()
-			summary.Path[i] = currentState.GetName()
-			summary.Occurences[currentState.GetName()] += 1
-		case mode.CRASH:
-			log.Errorf("Model crashed. Cause: %s", model.GetCause())
-			return summary
-		case mode.DEADLOCK:
-			log.Error("Deadlock! Exiting ...")
-			summary.DeadlockState = types.Some(model.GetCurrentState().GetName())
-			return summary
-		case mode.TERMINATE:
-			log.Infof("Model terminated in state %s", model.GetCurrentState().GetName())
-			return summary
+		randomChoice := arr[rand.Intn(len(arr))]
+		err := model.Fire(randomChoice)
+		if errors.As(err, &fsm.DeadlockError{}) {
+			name := model.GetCurrentState().GetName()
+			summary.DeadlockState = &name
+			return summary, fmt.Errorf("random_wrapper: %w", err)
+		} else if errors.As(err, &fsm.CrashError{}) {
+			return summary, fmt.Errorf("random_wrapper: %w", err)
 		}
+		currentState = model.GetCurrentState()
+		summary.Path[i] = currentState.GetName()
+		summary.Occurrences[currentState.GetName()] += 1
 	}
 	log.Info("Done")
-	return summary
+	return summary, nil
 }

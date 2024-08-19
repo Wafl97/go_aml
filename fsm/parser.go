@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/logger"
 )
 
@@ -179,8 +178,9 @@ func checkLineIsAutoRunTermination(line string, lineNumber int, sb *StateBuilder
 	}
 	var autoRunEvent AutoEvent
 	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
-	autoRunEvent.terminate = mode.TERMINATE
-	autoRunEvent.compuatations.FuncSignature = "func()"
+	//autoRunEvent.terminate = mode.TERMINATE
+	autoRunEvent.terminate2 = true
+	autoRunEvent.computations.FuncSignature = "func()"
 	sb.AutoRunEvent(autoRunEvent)
 	return true
 
@@ -204,12 +204,13 @@ func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, buil
 	}
 	var autoRunEvent AutoEvent
 	if hasComputation {
-		autoRunEvent.compuatations = *parseComputation(strings.Trim(strings.TrimSpace(computationString), ")"), lineNumber, builder)
+		autoRunEvent.computations = *parseComputation(strings.Trim(strings.TrimSpace(computationString), ")"), lineNumber, builder)
 	}
 	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
-	autoRunEvent.terminate = mode.CONTINUE
+	//autoRunEvent.terminate = mode.CONTINUE
+	autoRunEvent.terminate2 = false
 	autoRunEvent.resultingState = nextState
-	autoRunEvent.compuatations.FuncSignature = "func()"
+	autoRunEvent.computations.FuncSignature = "func()"
 	sb.AutoRunEvent(autoRunEvent)
 	return true
 }

@@ -1,16 +1,16 @@
 package fsm
 
 import (
-	"github.com/Wafl97/go_aml/fsm/mode"
 	"github.com/Wafl97/go_aml/util/functions"
 	"github.com/Wafl97/go_aml/util/logger"
 )
 
 type AutoEvent struct {
 	conditions     Conditionals
-	compuatations  Computational
+	computations   Computational
 	resultingState string
-	terminate      mode.Mode
+	//terminate      mode.Mode // DEPRECATED
+	terminate2 bool
 }
 
 type State struct {
@@ -26,22 +26,22 @@ func (state *State) GetTransitions() map[string][]*Edge {
 	return state.transitions
 }
 
-func (state *State) fire(event string, variables *Variables) (*string, mode.Mode) {
+func (state *State) fire(event string, variables *Variables) (*string, error) {
 	arr, containsEvent := state.transitions[event]
 	if !containsEvent {
-		return nil, mode.DEADLOCK
+		return nil, NewDeadlockErrorf("no transitions found for event %s", event)
 	}
 	state.logger.Debugf("Checking %d edge(s) ...", len(arr))
 	for _, edge := range arr {
-		res, newMode := edge.checkCondition(variables)
-		if res != nil {
-			return res, mode.CONTINUE
+		res, err := edge.checkCondition(variables)
+		if err != nil {
+			return nil, err
 		}
-		if newMode == mode.TERMINATE {
-			return res, newMode
+		if res != nil {
+			return res, nil
 		}
 	}
-	return nil, mode.DEADLOCK
+	return nil, NewDeadlockError("failed to transition")
 }
 
 func (state *State) GetEdgeTriggers() []string {
