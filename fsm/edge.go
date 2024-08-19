@@ -2,7 +2,6 @@ package fsm
 
 import (
 	"github.com/Wafl97/go_aml/util/functions"
-	"github.com/Wafl97/go_aml/util/types"
 )
 
 type EdgeMetaData struct {
@@ -14,42 +13,45 @@ type EdgeMetaData struct {
 type Edge struct {
 	terminate2     bool
 	resultingState *string
-	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
+	computation    functions.Consumer[*Variables] // DEPRECATED
 	computation2   Computational
-	condition      types.Option[functions.Predicate[*Variables]] // DEPRECATED
+	condition      functions.Predicate[*Variables] // DEPRECATED
 	condition2     Conditionals
 	metaData       EdgeMetaData
 }
 
 func (edge *Edge) checkCondition(variables *Variables) (*string, error) {
-	next := edge.resultingState
-	edge.condition.HasValue(func(p functions.Predicate[*Variables]) {
-		if !p(variables) {
-			next = nil
-			return
+	if c := edge.condition; c != nil {
+		if !c(variables) {
+			return nil, nil
 		}
 		edge.compute(variables)
-	}).Else(func() {
-		edge.compute(variables)
-	})
+		return edge.resultingState, nil
+	}
+	edge.compute(variables)
 	if edge.terminate2 {
 		return nil, TerminateError
 	}
-	return next, nil
+	return edge.resultingState, nil
 }
 
 func (edge *Edge) compute(variables *Variables) {
-	edge.computation.HasValue(func(c functions.Consumer[*Variables]) {
+	if c := edge.computation; c != nil {
 		c(variables)
-	})
+	}
+	if edge.computation2.Computations != nil {
+		for _, computation := range edge.computation2.Computations {
+			computation.Compute(variables)
+		}
+	}
 }
 
 type EdgeBuilder struct {
 	terminate2     bool
 	resultingState *string
-	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
+	computation    functions.Consumer[*Variables] // DEPRECATED
 	computation2   Computational
-	condition      types.Option[functions.Predicate[*Variables]] // DEPRECATED
+	condition      functions.Predicate[*Variables] // DEPRECATED
 	condition2     Conditionals
 	metaData       EdgeMetaData
 }
@@ -58,11 +60,11 @@ func newEdgeBuilder() EdgeBuilder {
 	return EdgeBuilder{
 		terminate2:     false,
 		resultingState: nil,
-		computation:    types.None[functions.Consumer[*Variables]](),
+		computation:    nil,
 		computation2: Computational{
-			Computations: []Computation{},
+			Computations: []*Computation{},
 		},
-		condition: types.None[functions.Predicate[*Variables]](),
+		condition: nil,
 		condition2: Conditionals{
 			Conditions: []Condition{},
 		},
@@ -90,7 +92,7 @@ func (builder *EdgeBuilder) Then(state string) *EdgeBuilder {
 
 // DEPRECATED
 func (builder *EdgeBuilder) And(condition functions.Predicate[*Variables]) *EdgeBuilder {
-	builder.condition = types.Some(condition)
+	builder.condition = condition
 	return builder
 }
 
@@ -106,12 +108,12 @@ func (builder *EdgeBuilder) AndMeta(metaData string) *EdgeBuilder {
 
 // DEPRECATED
 func (builder *EdgeBuilder) Run(computation functions.Consumer[*Variables]) *EdgeBuilder {
-	builder.computation = types.Some(computation)
+	builder.computation = computation
 	return builder
 }
 
-func (builder *EdgeBuilder) Run2(computations *Computational) *EdgeBuilder {
-	builder.computation2 = *computations
+func (builder *EdgeBuilder) Run2(computations *[]*Computation) *EdgeBuilder {
+	builder.computation2.Computations = *computations
 	return builder
 }
 

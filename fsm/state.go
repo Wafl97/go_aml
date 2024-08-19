@@ -105,8 +105,8 @@ func (builder *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilde
 	return builder
 }
 
-func (builder *StateBuilder) AutoRun(computations *Computational) *StateBuilder {
-	builder.defaultComputations = *computations
+func (builder *StateBuilder) AutoRun(computations *[]*Computation) *StateBuilder {
+	builder.defaultComputations.Computations = *computations
 	return builder
 }
 

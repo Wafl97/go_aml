@@ -162,7 +162,6 @@ func checkLineIsAutoComputation(line string, lineNumber int, sb *StateBuilder, b
 		return false
 	}
 	computations := parseComputation(autoComputation, lineNumber, builder)
-	computations.FuncSignature = "func(event string)"
 	sb.AutoRun(computations)
 	return true
 }
@@ -178,7 +177,6 @@ func checkLineIsAutoRunTermination(line string, lineNumber int, sb *StateBuilder
 	}
 	var autoRunEvent AutoEvent
 	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
-	//autoRunEvent.terminate = mode.TERMINATE
 	autoRunEvent.terminate2 = true
 	autoRunEvent.computations.FuncSignature = "func()"
 	sb.AutoRunEvent(autoRunEvent)
@@ -204,7 +202,7 @@ func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, buil
 	}
 	var autoRunEvent AutoEvent
 	if hasComputation {
-		autoRunEvent.computations = *parseComputation(strings.Trim(strings.TrimSpace(computationString), ")"), lineNumber, builder)
+		autoRunEvent.computations.Computations = *parseComputation(strings.Trim(strings.TrimSpace(computationString), ")"), lineNumber, builder)
 	}
 	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
 	autoRunEvent.terminate2 = false
@@ -268,11 +266,9 @@ func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state 
 	return true
 }
 
-func parseComputation(computationString string, lineNumber int, builder *FiniteStateMachineBuilder) *Computational {
+func parseComputation(computationString string, lineNumber int, builder *FiniteStateMachineBuilder) *[]*Computation {
 	subComputations := strings.Split(computationString, ",")
-	computational := Computational{
-		Computations: make([]Computation, 0, len(subComputations)),
-	}
+	computations := make([]*Computation, 0, len(subComputations))
 	for _, subComputation := range subComputations {
 		subComputation = strings.TrimSpace(subComputation)
 		var computation Computation
@@ -303,9 +299,9 @@ func parseComputation(computationString string, lineNumber int, builder *FiniteS
 			continue
 		}
 		computation.Right = tokens[2]
-		computational.Computations = append(computational.Computations, computation)
+		computations = append(computations, &computation)
 	}
-	return &computational
+	return &computations
 }
 
 func parseCondition(conditionString string, lineNumber int, builder *FiniteStateMachineBuilder) *Conditionals {
