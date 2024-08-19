@@ -24,7 +24,7 @@ func FromString(str string) (*FiniteStateMachine, error) {
 			continue
 		}
 
-		// only attempt to find model name if none is alreay found
+		// only attempt to find model name if none is already found
 		if len(builder.modelName) == 0 {
 			handleModelName(line, lineNumber, &builder)
 		}
@@ -45,7 +45,7 @@ func FromString(str string) (*FiniteStateMachine, error) {
 	return &model, nil
 }
 
-func handleVariableDeclaration(line string, lineNumber int, builder *FsmBuilder) {
+func handleVariableDeclaration(line string, lineNumber int, builder *FiniteStateMachineBuilder) {
 	varDef, isVarDef := strings.CutPrefix(line, "var")
 	if !isVarDef {
 		return
@@ -96,7 +96,7 @@ func handleVariableDeclaration(line string, lineNumber int, builder *FsmBuilder)
 	plog.Debugf("Set String")
 }
 
-func handleModelName(line string, lineNumber int, builder *FsmBuilder) {
+func handleModelName(line string, lineNumber int, builder *FiniteStateMachineBuilder) {
 	modelName, containsModelName := strings.CutPrefix(line, "model ")
 	if containsModelName {
 		if len(modelName) == 0 {
@@ -107,7 +107,7 @@ func handleModelName(line string, lineNumber int, builder *FsmBuilder) {
 	}
 }
 
-func handleStateDef(line string, lineNumber int, builder *FsmBuilder, lines *[]string) int {
+func handleStateDef(line string, lineNumber int, builder *FiniteStateMachineBuilder, lines *[]string) int {
 	init, state, containsState := strings.Cut(line, "state ")
 	if !containsState {
 		return lineNumber
@@ -156,18 +156,18 @@ func handleStateDef(line string, lineNumber int, builder *FsmBuilder, lines *[]s
 	return iterated
 }
 
-func checkLineIsAutoComputation(line string, lineNumber int, sb *StateBuilder, builder *FsmBuilder) bool {
-	autoComputation, isAutoCompuation := strings.CutPrefix(line, ">>")
-	if !isAutoCompuation {
+func checkLineIsAutoComputation(line string, lineNumber int, sb *StateBuilder, builder *FiniteStateMachineBuilder) bool {
+	autoComputation, isAutoComputation := strings.CutPrefix(line, ">>")
+	if !isAutoComputation {
 		return false
 	}
-	compuations := parseComputation(autoComputation, lineNumber, builder)
-	compuations.FuncSignature = "func(event string)"
-	sb.AutoRun(compuations)
+	computations := parseComputation(autoComputation, lineNumber, builder)
+	computations.FuncSignature = "func(event string)"
+	sb.AutoRun(computations)
 	return true
 }
 
-func checkLineIsAutoRunTermination(line string, lineNumber int, sb *StateBuilder, builder *FsmBuilder) bool {
+func checkLineIsAutoRunTermination(line string, lineNumber int, sb *StateBuilder, builder *FiniteStateMachineBuilder) bool {
 	autoEvent, isAutoEvent := strings.CutPrefix(line, "|>")
 	if !isAutoEvent {
 		return false
@@ -186,7 +186,7 @@ func checkLineIsAutoRunTermination(line string, lineNumber int, sb *StateBuilder
 
 }
 
-func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, builder *FsmBuilder) bool {
+func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, builder *FiniteStateMachineBuilder) bool {
 	autoEvent, isAutoEvent := strings.CutPrefix(line, "|>")
 	if !isAutoEvent {
 		return false
@@ -207,7 +207,6 @@ func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, buil
 		autoRunEvent.computations = *parseComputation(strings.Trim(strings.TrimSpace(computationString), ")"), lineNumber, builder)
 	}
 	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
-	//autoRunEvent.terminate = mode.CONTINUE
 	autoRunEvent.terminate2 = false
 	autoRunEvent.resultingState = nextState
 	autoRunEvent.computations.FuncSignature = "func()"
@@ -215,7 +214,7 @@ func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, buil
 	return true
 }
 
-func checkLineIsTermination(line string, lineNumber int, sb *StateBuilder, state string, builder *FsmBuilder) bool {
+func checkLineIsTermination(line string, lineNumber int, sb *StateBuilder, state string, builder *FiniteStateMachineBuilder) bool {
 	event, isTermination := strings.CutSuffix(line, "-x")
 	if !isTermination {
 		return false
@@ -237,7 +236,7 @@ func checkLineIsTermination(line string, lineNumber int, sb *StateBuilder, state
 	return true
 }
 
-func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state string, builder *FsmBuilder) bool {
+func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state string, builder *FiniteStateMachineBuilder) bool {
 	event, nextState, isTransition := strings.Cut(line, "->")
 	if !isTransition {
 		return false
@@ -269,7 +268,7 @@ func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state 
 	return true
 }
 
-func parseComputation(computationString string, lineNumber int, builder *FsmBuilder) *Computational {
+func parseComputation(computationString string, lineNumber int, builder *FiniteStateMachineBuilder) *Computational {
 	subComputations := strings.Split(computationString, ",")
 	computational := Computational{
 		Computations: make([]Computation, 0, len(subComputations)),
@@ -309,26 +308,22 @@ func parseComputation(computationString string, lineNumber int, builder *FsmBuil
 	return &computational
 }
 
-func parseCondition(conditionString string, lineNumber int, builder *FsmBuilder) *Conditionals {
+func parseCondition(conditionString string, lineNumber int, builder *FiniteStateMachineBuilder) *Conditionals {
 	subConditions := strings.Split(conditionString, ",")
 	conditionals := Conditionals{
 		Conditions: make([]Condition, 0, len(subConditions)),
 	}
 	for _, subCondition := range subConditions {
 		subCondition = strings.TrimSpace(subCondition)
-		//var condition Condition
 		tokens := strings.SplitN(subCondition, " ", 3)
 		if len(tokens) != 3 {
 			plog.Warnf("Bad condition for transition on line %d, cannot infer condition (%s) ... skipping", lineNumber+1, subCondition)
 			continue
 		}
-		//condition.Left = tokens[0]
 		if _, isDeclared := builder.variables.values[tokens[0]]; !isDeclared {
 			plog.Warnf("Bad condition for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, tokens[0])
 			continue
 		}
-		//condition.Right = tokens[2]
-		//condition.ValueType = builder.variables.types[tokens[0]]
 		var symbol LogicSymbol
 		switch tokens[1] {
 		case "==":

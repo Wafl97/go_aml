@@ -41,7 +41,7 @@ func (state *State) fire(event string, variables *Variables) (*string, error) {
 			return res, nil
 		}
 	}
-	return nil, NewDeadlockError("failed to transition")
+	return nil, NewDeadlockErrorf("fsm_state_fire: deadlock reached in state %s, no valid transitions", state.name)
 }
 
 func (state *State) GetEdgeTriggers() []string {

@@ -6,17 +6,13 @@ import (
 )
 
 type EdgeMetaData struct {
-	rawLine string
-	//computation types.Option[string]
+	rawLine     string
 	computation *string
-	//condition   types.Option[string]
-	condition *string
+	condition   *string
 }
 
 type Edge struct {
-	//terminate  mode.Mode // DEPRECATED
-	terminate2 bool
-	//resultingState types.Option[string]
+	terminate2     bool
 	resultingState *string
 	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
 	computation2   Computational
@@ -49,9 +45,7 @@ func (edge *Edge) compute(variables *Variables) {
 }
 
 type EdgeBuilder struct {
-	//terminate  mode.Mode // DEPRECATED
-	terminate2 bool
-	//resultingState types.Option[string]
+	terminate2     bool
 	resultingState *string
 	computation    types.Option[functions.Consumer[*Variables]] // DEPRECATED
 	computation2   Computational
@@ -62,7 +56,6 @@ type EdgeBuilder struct {
 
 func newEdgeBuilder() EdgeBuilder {
 	return EdgeBuilder{
-		//terminate:      mode.CONTINUE,
 		terminate2:     false,
 		resultingState: nil,
 		computation:    types.None[functions.Consumer[*Variables]](),
@@ -86,7 +79,6 @@ func (builder *EdgeBuilder) MetaData(metaData string) *EdgeBuilder {
 }
 
 func (builder *EdgeBuilder) End() *EdgeBuilder {
-	//builder.terminate = mode.TERMINATE
 	builder.terminate2 = true
 	return builder
 }
@@ -130,7 +122,6 @@ func (builder *EdgeBuilder) RunMeta(metaData string) *EdgeBuilder {
 
 func (builder *EdgeBuilder) build() Edge {
 	return Edge{
-		//terminate:      builder.terminate,
 		terminate2:     builder.terminate2,
 		resultingState: builder.resultingState,
 		computation:    builder.computation,

@@ -136,7 +136,7 @@ func TestFullModel(t *testing.T) {
 		Given("SX", func(sb *fsm.StateBuilder) {
 			sb.
 				When("TO-S1", func(eb *fsm.EdgeBuilder) {
-					eb.And(func(v *fsm.Variables) bool { return v.Get("INT").(int) >= 0 }).Then("S1")
+					eb.And(func(v *fsm.Variables) bool { return v.Get("INT").(int) > 0 }).Then("S1")
 				})
 		}).
 		Initial("S1")
@@ -151,9 +151,6 @@ func TestFullModel(t *testing.T) {
 	}
 	log.Infof("Path: %v", sum.Path)
 	log.Infof("Occurrences: %v", sum.Occurrences)
-	if state := sum.DeadlockState; state != nil {
-		log.Infof("Deadlock State: %s", *state)
-	}
 }
 
 func FuzzVariables(f *testing.F) {

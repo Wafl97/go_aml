@@ -7,8 +7,6 @@ import (
 )
 
 type FiniteStateMachine struct {
-	cause string // DEPRECATED
-	//mode         mode.Mode // DEPRECATED
 	logger       logger.Logger
 	modelName    string
 	states       map[string]*State
@@ -20,8 +18,6 @@ type FiniteStateMachine struct {
 func (fsm *FiniteStateMachine) Fire(event string) error {
 	fsm.logger.Debugf("Firing %s", event)
 	if fsm.currentState == nil {
-		//fsm.cause = "No current state"
-		//fsm.mode = mode.DEADLOCK
 		return fmt.Errorf("fsm_model_fire: no current state")
 	}
 	fsm.logger.Debugf("Checking %s ...", fsm.currentState.GetName())
@@ -29,7 +25,6 @@ func (fsm *FiniteStateMachine) Fire(event string) error {
 	if err != nil {
 		return err
 	}
-	//fsm.mode = currentMode
 	if state == nil {
 		//fsm.cause = "No resulting state from transition"
 		//fsm.mode = mode.DEADLOCK
@@ -61,16 +56,6 @@ func (fsm *FiniteStateMachine) GetRegisteredStates() []string {
 	return cache
 }
 
-// DEPRECATED
-/*func (fsm *FiniteStateMachine) GetMode() mode.Mode {
-	return fsm.mode
-}*/
-
-// DEPRECATED
-func (fsm *FiniteStateMachine) GetCause() string {
-	return fsm.cause
-}
-
 func (fsm *FiniteStateMachine) GetModelName() string {
 	return fsm.modelName
 }
@@ -79,7 +64,7 @@ func (fsm *FiniteStateMachine) GetCurrentState() *State {
 	return fsm.currentState
 }
 
-type FsmBuilder struct {
+type FiniteStateMachineBuilder struct {
 	logger       logger.Logger
 	modelName    string
 	states       map[string]*State
@@ -87,9 +72,9 @@ type FsmBuilder struct {
 	variables    Variables
 }
 
-func NewFsmBuilder() FsmBuilder {
+func NewFsmBuilder() FiniteStateMachineBuilder {
 	builderLogger := logger.New("FSM (Builder)")
-	return FsmBuilder{
+	return FiniteStateMachineBuilder{
 		logger:       builderLogger,
 		states:       map[string]*State{},
 		modelName:    "",
@@ -98,17 +83,17 @@ func NewFsmBuilder() FsmBuilder {
 	}
 }
 
-func (fsm *FsmBuilder) Name(modelName string) *FsmBuilder {
+func (fsm *FiniteStateMachineBuilder) Name(modelName string) *FiniteStateMachineBuilder {
 	fsm.modelName = modelName
 	return fsm
 }
 
-func (fsm *FsmBuilder) DeclareVar(key string, value any) *FsmBuilder {
+func (fsm *FiniteStateMachineBuilder) DeclareVar(key string, value any) *FiniteStateMachineBuilder {
 	fsm.variables.Set(key, value)
 	return fsm
 }
 
-func (fsm *FsmBuilder) Given(state string, f functions.Consumer[*StateBuilder]) *FsmBuilder {
+func (fsm *FiniteStateMachineBuilder) Given(state string, f functions.Consumer[*StateBuilder]) *FiniteStateMachineBuilder {
 	sb := newStateBuilder(state)
 	f(&sb)
 	st := sb.build()
@@ -116,7 +101,7 @@ func (fsm *FsmBuilder) Given(state string, f functions.Consumer[*StateBuilder]) 
 	return fsm
 }
 
-func (fsm *FsmBuilder) Initial(state string) *FsmBuilder {
+func (fsm *FiniteStateMachineBuilder) Initial(state string) *FiniteStateMachineBuilder {
 	st, contains := fsm.states[state]
 	if !contains {
 		//fsm.logger.Error("Initial state '" + state + "' is invalid")
@@ -126,12 +111,11 @@ func (fsm *FsmBuilder) Initial(state string) *FsmBuilder {
 	return fsm
 }
 
-func (fsm *FsmBuilder) Build() FiniteStateMachine {
+func (fsm *FiniteStateMachineBuilder) Build() FiniteStateMachine {
 	if len(fsm.modelName) == 0 {
 		fsm.modelName = "Default (FSM)"
 	}
 	return FiniteStateMachine{
-		//mode:         mode.CONTINUE,
 		logger:       logger.New(fsm.modelName),
 		modelName:    fsm.modelName,
 		currentState: fsm.initialState,

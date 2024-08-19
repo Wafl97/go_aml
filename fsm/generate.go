@@ -147,7 +147,6 @@ func generateCode(model *FiniteStateMachine) string {
 		if len(state.defaultComputations.Computations) == 0 {
 			defaultComputation = "nil"
 		} else {
-			//defaultComputation = GenerateComputation("func(event string)", &state.defaultComputations)
 			defaultComputation = state.defaultComputations.Generate()
 		}
 		var autoEvents string = ""
@@ -162,7 +161,6 @@ func generateCode(model *FiniteStateMachine) string {
 			autoEvents += fmt.Sprintf("\t\t\t{%s, %s, %s},\n",
 				autoEvent.conditions.Generate(),
 				resultState,
-				//GenerateComputation("func()", &autoEvent.compuatations),
 				autoEvent.computations.Generate(),
 			)
 		}
@@ -184,7 +182,6 @@ func generateCode(model *FiniteStateMachine) string {
 				transitions += fmt.Sprintf("\t\t\t\t{%s, %s, %s}, /* %s */\n",
 					edge.condition2.Generate(),
 					resultState,
-					//GenerateComputation("func()", &edge.computation2),
 					edge.computation2.Generate(),
 					edge.metaData.rawLine)
 			}
@@ -196,29 +193,3 @@ func generateCode(model *FiniteStateMachine) string {
 	initialState := model.currentState.GetName()
 	return fmt.Sprintf(codeStructure, GENERATOR_VERSION, variables, states, transitions, initialState)
 }
-
-/* func GenerateComputation(funcSignature string, computations *[]Computation) string {
-	switch len(*computations) {
-	case 0:
-		return "nil"
-	default:
-		computationStrings := make([]string, len(*computations))
-		for i := 0; i < len(computationStrings); i++ {
-			computationStrings[i] = (*computations)[i].ToString()
-		}
-		return fmt.Sprintf("%s { %s }", funcSignature, strings.Join(computationStrings, "; "))
-	}
-} */
-
-/* func GenerateCondition(conditions *[]Condition) string {
-	switch len(*conditions) {
-	case 0:
-		return "nil"
-	default:
-		conditionalStrings := make([]string, len(*conditions))
-		for i := 0; i < len(conditionalStrings); i++ {
-			conditionalStrings[i] = (*conditions)[i].ToString()
-		}
-		return fmt.Sprintf("func() bool { return %s }", strings.Join(conditionalStrings, " && "))
-	}
-} */
