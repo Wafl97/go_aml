@@ -83,44 +83,52 @@ func NewFsmBuilder() FiniteStateMachineBuilder {
 	}
 }
 
-func (fsm *FiniteStateMachineBuilder) Name(modelName string) *FiniteStateMachineBuilder {
-	fsm.modelName = modelName
-	return fsm
+func (builder *FiniteStateMachineBuilder) Name(modelName string) *FiniteStateMachineBuilder {
+	builder.modelName = modelName
+	return builder
 }
 
-func (fsm *FiniteStateMachineBuilder) DeclareVar(key string, value any) *FiniteStateMachineBuilder {
-	fsm.variables.Set(key, value)
-	return fsm
+func (builder *FiniteStateMachineBuilder) DeclareVar(key string, varType VariableType, value any) *FiniteStateMachineBuilder {
+	builder.variables.Set(key, varType, value)
+	return builder
 }
 
-func (fsm *FiniteStateMachineBuilder) Given(state string, f functions.Consumer[*StateBuilder]) *FiniteStateMachineBuilder {
-	sb := newStateBuilder(state)
-	f(&sb)
+func (builder *FiniteStateMachineBuilder) Given(state string, f functions.Consumer[*StateBuilder]) *FiniteStateMachineBuilder {
+	sb := NewStateBuilder()
+	sb.name = state
+	f(sb)
 	st := sb.build()
-	fsm.states[state] = &st
-	return fsm
+	builder.states[state] = &st
+	return builder
 }
 
-func (fsm *FiniteStateMachineBuilder) Initial(state string) *FiniteStateMachineBuilder {
-	st, contains := fsm.states[state]
+func (builder *FiniteStateMachineBuilder) Given2(state string, stateBuilder *StateBuilder) *FiniteStateMachineBuilder {
+	stateBuilder.name = state
+	st := stateBuilder.build()
+	builder.states[state] = &st
+	return builder
+}
+
+func (builder *FiniteStateMachineBuilder) Initial(state string) *FiniteStateMachineBuilder {
+	st, contains := builder.states[state]
 	if !contains {
 		//fsm.logger.Error("Initial state '" + state + "' is invalid")
-		return fsm
+		return builder
 	}
-	fsm.initialState = st
-	return fsm
+	builder.initialState = st
+	return builder
 }
 
-func (fsm *FiniteStateMachineBuilder) Build() FiniteStateMachine {
-	if len(fsm.modelName) == 0 {
-		fsm.modelName = "Default (FSM)"
+func (builder *FiniteStateMachineBuilder) Build() FiniteStateMachine {
+	if len(builder.modelName) == 0 {
+		builder.modelName = "Default (FSM)"
 	}
 	return FiniteStateMachine{
-		logger:       logger.New(fsm.modelName),
-		modelName:    fsm.modelName,
-		currentState: fsm.initialState,
-		states:       fsm.states,
-		variables:    fsm.variables,
+		logger:       logger.New(builder.modelName),
+		modelName:    builder.modelName,
+		currentState: builder.initialState,
+		states:       builder.states,
+		variables:    builder.variables,
 		cache:        map[string]any{},
 	}
 }

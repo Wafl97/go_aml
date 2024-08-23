@@ -12,34 +12,47 @@ type Computation struct {
 	ValueType VariableType
 }
 
+func (builder *FiniteStateMachineBuilder) NewComputations(function func(variables Variables)) []Computation {
+	computations := make([]Computation, 0)
+	builder.variables.listener = VarChangeListener{
+		callback: func(a any, o ArithmeticSymbol, v VariableType) {
+			builder.logger.Debugf("VAR CHANGE %v %v %s", a, o.String(), v.String())
+		},
+	}
+	function(builder.variables)
+
+	return computations
+}
+
 func (computation *Computation) ToString() string {
-	return fmt.Sprintf("%s %s %v", computation.Left, computation.Operator.ASToString(), computation.Right)
+	return fmt.Sprintf("%s %s %v", computation.Left, computation.Operator.String(), computation.Right)
 }
 
 func (computation *Computation) Compute(variables *Variables) {
+	originalValue, _ := variables.Get(computation.Left)
 	switch computation.Operator {
 	case ASSIGN:
-		variables.Set(computation.Left, computation.Right)
+		variables.Set(computation.Left, computation.ValueType, computation.Right)
 	case ADD_ASSIGN:
-		variables.Set(computation.Left, add(variables.Get(computation.Left), computation.Right, computation.ValueType))
+		variables.Set(computation.Left, computation.ValueType, add(originalValue, computation.Right, computation.ValueType))
 	case SUB_ASSIGN:
-		variables.Set(computation.Left, sub(variables.Get(computation.Left), computation.Right, computation.ValueType))
+		variables.Set(computation.Left, computation.ValueType, sub(originalValue, computation.Right, computation.ValueType))
 	case MUL_ASSIGN:
-		variables.Set(computation.Left, mul(variables.Get(computation.Left), computation.Right, computation.ValueType))
+		variables.Set(computation.Left, computation.ValueType, mul(originalValue, computation.Right, computation.ValueType))
 	case DIV_ASSIGN:
-		variables.Set(computation.Left, div(variables.Get(computation.Left), computation.Right, computation.ValueType))
+		variables.Set(computation.Left, computation.ValueType, div(originalValue, computation.Right, computation.ValueType))
 	}
 }
 
 func add(a, b any, v VariableType) any {
 	switch v {
 	case FLOAT:
-		af := a.(float32)
-		bf := b.(float32)
+		af := a.(float64)
+		bf := b.(float64)
 		return af + bf
 	case INT:
-		ai := a.(int32)
-		bi := a.(int32)
+		ai := a.(int)
+		bi := a.(int)
 		return ai + bi
 	case BOOL:
 		return nil
@@ -107,7 +120,7 @@ func div(a, b any, v VariableType) any {
 
 type Computational struct {
 	FuncSignature string
-	Computations  []*Computation
+	Computations  []Computation
 }
 
 func (computational Computational) Generate() string {

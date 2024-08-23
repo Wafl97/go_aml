@@ -10,18 +10,14 @@ import (
 
 func TestVariables(t *testing.T) {
 	vars := fsm.NewVariables()
-	vars.Set("A", 1)
-	a := vars.Get("A").(int)
+	vars.Set("A", fsm.INT, 1)
+	a, _ := vars.Get("A")
+
 	if a != 1 {
 		t.Log("Variables.Get Failed")
 		t.Fail()
 	}
-	vars.Set("B", "1")
-	b := fsm.GetAndCast[string](&vars, "B")
-	if b != "1" {
-		t.Log("GetAndCast Variables Falied")
-		t.Fail()
-	}
+
 }
 
 const MODEL_NAME = "MODEL T"
@@ -31,14 +27,7 @@ const EVENT_1 = "EVENT 1"
 
 func TestFSM(t *testing.T) {
 	smb := fsm.NewFsmBuilder()
-	smb.Name(MODEL_NAME).Given(
-		STATE_1,
-		func(sb *fsm.StateBuilder) {
-			sb.When(EVENT_1, func(eb *fsm.EdgeBuilder) {
-				eb.Then(STATE_2)
-			})
-		},
-	).Initial(STATE_1)
+	smb.Name(MODEL_NAME).Given2(STATE_1, fsm.NewStateBuilder().When2(EVENT_1, fsm.NewEdgeBuilder().Then(STATE_2))).Initial(STATE_1)
 	sm := smb.Build()
 	if sm.GetModelName() != MODEL_NAME {
 		t.Fail()
@@ -50,17 +39,16 @@ func TestFSM(t *testing.T) {
 }
 
 func TestFullModel(t *testing.T) {
-	logger.SetLogLevel(logger.INFO)
+	logger.SetLogLevel(logger.DEBUG)
 	log := logger.New("TESTING")
 	tmb := fsm.NewFsmBuilder()
 	tmb.
 		Name("MODEL T").
-		DeclareVar("INT", 0).
+		DeclareVar("INT", fsm.INT, 0).
+		DeclareVar("FLOAT", fsm.FLOAT, 0.1).
 		Given("S1", func(sb *fsm.StateBuilder) {
 			sb.
-				When("TO-S2", func(eb *fsm.EdgeBuilder) {
-					eb.Then("S2")
-				}).
+				When2("TO-S2", fsm.NewEdgeBuilder().Then("S2")).
 				When("TO-S3", func(eb *fsm.EdgeBuilder) {
 					eb.Then("S3")
 				}).
@@ -130,13 +118,16 @@ func TestFullModel(t *testing.T) {
 					eb.Then("S4")
 				}).
 				When("TO-SX", func(eb *fsm.EdgeBuilder) {
-					eb.Then("SX")
+					eb.Then("SX").Run2(tmb.NewComputations(func(variables fsm.Variables) {
+						variables.Update("INT", fsm.ADD_ASSIGN, 1)
+						variables.Update("FLOAT", fsm.ASSIGN, float64(10.0))
+					}))
 				})
 		}).
 		Given("SX", func(sb *fsm.StateBuilder) {
 			sb.
 				When("TO-S1", func(eb *fsm.EdgeBuilder) {
-					eb.And(func(v *fsm.Variables) bool { return v.Get("INT").(int) > 0 }).Then("S1")
+					eb.Then("S1")
 				})
 		}).
 		Initial("S1")
@@ -158,17 +149,17 @@ func FuzzVariables(f *testing.F) {
 
 	f.Add(float32(0.5), 1, false)
 	f.Fuzz(func(t *testing.T, f1 float32, i1 int, b1 bool) {
-		vars.Set("f", f1)
-		vars.Set("i", i1)
-		vars.Set("b", b1)
+		vars.Set("f", fsm.FLOAT, f1)
+		vars.Set("i", fsm.INT, i1)
+		vars.Set("b", fsm.BOOL, b1)
 
-		if vars.Get("f") != f1 {
+		if f2, _ := vars.Get("f"); f2 != f1 {
 			t.Error("float failed")
 		}
-		if vars.Get("i") != i1 {
+		if i2, _ := vars.Get("i"); i2 != i1 {
 			t.Error("int failed")
 		}
-		if vars.Get("b") != b1 {
+		if b2, _ := vars.Get("b"); b2 != b1 {
 			t.Error("bool failed")
 		}
 	})

@@ -15,13 +15,13 @@ type Edge struct {
 	resultingState *string
 	computation    functions.Consumer[*Variables] // DEPRECATED
 	computation2   Computational
-	condition      functions.Predicate[*Variables] // DEPRECATED
-	condition2     Conditionals
-	metaData       EdgeMetaData
+	//condition      functions.Predicate[*Variables] // DEPRECATED
+	condition2 Conditionals
+	metaData   EdgeMetaData
 }
 
 func (edge *Edge) checkCondition(variables *Variables) (*string, error) {
-	if c := edge.condition; c != nil {
+	if c := edge.condition2.function; c != nil {
 		if !c(variables) {
 			return nil, nil
 		}
@@ -30,7 +30,7 @@ func (edge *Edge) checkCondition(variables *Variables) (*string, error) {
 	}
 	edge.compute(variables)
 	if edge.terminate2 {
-		return nil, TerminateError
+		return nil, ErrTerminated
 	}
 	return edge.resultingState, nil
 }
@@ -52,22 +52,20 @@ type EdgeBuilder struct {
 	computation    functions.Consumer[*Variables] // DEPRECATED
 	computation2   Computational
 	condition      functions.Predicate[*Variables] // DEPRECATED
-	condition2     Conditionals
+	condition2     []Condition
 	metaData       EdgeMetaData
 }
 
-func newEdgeBuilder() EdgeBuilder {
-	return EdgeBuilder{
+func NewEdgeBuilder() *EdgeBuilder {
+	return &EdgeBuilder{
 		terminate2:     false,
 		resultingState: nil,
 		computation:    nil,
 		computation2: Computational{
-			Computations: []*Computation{},
+			Computations: []Computation{},
 		},
-		condition: nil,
-		condition2: Conditionals{
-			Conditions: []Condition{},
-		},
+		condition:  nil,
+		condition2: []Condition{},
 		metaData: EdgeMetaData{
 			computation: nil,
 			condition:   nil,
@@ -96,7 +94,7 @@ func (builder *EdgeBuilder) And(condition functions.Predicate[*Variables]) *Edge
 	return builder
 }
 
-func (builder *EdgeBuilder) And2(conditions *Conditionals) *EdgeBuilder {
+func (builder *EdgeBuilder) And2(conditions *[]Condition) *EdgeBuilder {
 	builder.condition2 = *conditions
 	return builder
 }
@@ -112,8 +110,8 @@ func (builder *EdgeBuilder) Run(computation functions.Consumer[*Variables]) *Edg
 	return builder
 }
 
-func (builder *EdgeBuilder) Run2(computations *[]*Computation) *EdgeBuilder {
-	builder.computation2.Computations = *computations
+func (builder *EdgeBuilder) Run2(computations []Computation) *EdgeBuilder {
+	builder.computation2.Computations = computations
 	return builder
 }
 
@@ -128,8 +126,8 @@ func (builder *EdgeBuilder) build() Edge {
 		resultingState: builder.resultingState,
 		computation:    builder.computation,
 		computation2:   builder.computation2,
-		condition:      builder.condition,
-		condition2:     builder.condition2,
-		metaData:       builder.metaData,
+		//condition:      builder.condition,
+		condition2: NewConditionals(builder.condition2, builder.condition),
+		metaData:   builder.metaData,
 	}
 }

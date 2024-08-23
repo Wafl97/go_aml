@@ -69,10 +69,9 @@ type StateBuilder struct {
 	transitions         map[string][]*Edge
 }
 
-func newStateBuilder(state string) StateBuilder {
-	return StateBuilder{
-		logger: logger.New(state + "(Builder)"),
-		name:   state,
+func NewStateBuilder() *StateBuilder {
+	return &StateBuilder{
+		logger: logger.New("STATE_BUILDER"),
 		defaultComputations: Computational{
 			FuncSignature: "func(event string)",
 		},
@@ -91,9 +90,10 @@ func (builder *StateBuilder) build() State {
 	}
 }
 
+// DEPRECATED
 func (builder *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilder]) *StateBuilder {
-	edgeBuilder := newEdgeBuilder()
-	f(&edgeBuilder)
+	edgeBuilder := NewEdgeBuilder()
+	f(edgeBuilder)
 	edgeBuilder.computation2.FuncSignature = "func()"
 	edge := edgeBuilder.build()
 	_, contains := builder.transitions[event]
@@ -105,8 +105,20 @@ func (builder *StateBuilder) When(event string, f functions.Consumer[*EdgeBuilde
 	return builder
 }
 
-func (builder *StateBuilder) AutoRun(computations *[]*Computation) *StateBuilder {
-	builder.defaultComputations.Computations = *computations
+func (builder *StateBuilder) When2(event string, edgeBuilder *EdgeBuilder) *StateBuilder {
+	edgeBuilder.computation2.FuncSignature = "func()"
+	edge := edgeBuilder.build()
+	_, contains := builder.transitions[event]
+	if contains {
+		builder.transitions[event] = append(builder.transitions[event], &edge)
+	} else {
+		builder.transitions[event] = []*Edge{&edge}
+	}
+	return builder
+}
+
+func (builder *StateBuilder) AutoRun(computations []Computation) *StateBuilder {
+	builder.defaultComputations.Computations = computations
 	return builder
 }
 

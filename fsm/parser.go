@@ -68,31 +68,27 @@ func handleVariableDeclaration(line string, lineNumber int, builder *FiniteState
 	// try int first
 	intValue, ierr := strconv.ParseInt(varValue, 10, 32)
 	if ierr == nil {
-		builder.variables.Set(varName, intValue)
-		builder.variables.SetType(varName, INT)
+		builder.variables.Set(varName, INT, intValue)
 		plog.Debugf("Set Int")
 		return
 	}
 	// then float
 	floatValue, ferr := strconv.ParseFloat(varValue, 32)
 	if ferr == nil {
-		builder.variables.Set(varName, floatValue)
-		builder.variables.SetType(varName, FLOAT)
+		builder.variables.Set(varName, FLOAT, floatValue)
 		plog.Debugf("Set Float")
 		return
 	}
 	// then bool
 	boolValue, berr := strconv.ParseBool(varValue)
 	if berr == nil {
-		builder.variables.Set(varName, boolValue)
-		builder.variables.SetType(varName, BOOL)
+		builder.variables.Set(varName, BOOL, boolValue)
 		plog.Debugf("Set Bool")
 		return
 	}
 	// if all else fails just have a string
 	//varValue = strings.Trim(varValue, "\"")
-	builder.variables.Set(varName, varValue)
-	builder.variables.SetType(varName, STRING)
+	builder.variables.Set(varName, STRING, varValue)
 	plog.Debugf("Set String")
 }
 
@@ -176,7 +172,7 @@ func checkLineIsAutoRunTermination(line string, lineNumber int, sb *StateBuilder
 		return false
 	}
 	var autoRunEvent AutoEvent
-	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
+	autoRunEvent.conditions.conditions = *parseCondition(autoEvent, lineNumber, builder)
 	autoRunEvent.terminate2 = true
 	autoRunEvent.computations.FuncSignature = "func()"
 	sb.AutoRunEvent(autoRunEvent)
@@ -202,9 +198,9 @@ func checkLineIsAutoRunEvent(line string, lineNumber int, sb *StateBuilder, buil
 	}
 	var autoRunEvent AutoEvent
 	if hasComputation {
-		autoRunEvent.computations.Computations = *parseComputation(strings.Trim(strings.TrimSpace(computationString), ")"), lineNumber, builder)
+		autoRunEvent.computations.Computations = parseComputation(strings.Trim(strings.TrimSpace(computationString), ")"), lineNumber, builder)
 	}
-	autoRunEvent.conditions = *parseCondition(autoEvent, lineNumber, builder)
+	autoRunEvent.conditions.conditions = *parseCondition(autoEvent, lineNumber, builder)
 	autoRunEvent.terminate2 = false
 	autoRunEvent.resultingState = nextState
 	autoRunEvent.computations.FuncSignature = "func()"
@@ -266,9 +262,9 @@ func checkLineIsTransition(line string, lineNumber int, sb *StateBuilder, state 
 	return true
 }
 
-func parseComputation(computationString string, lineNumber int, builder *FiniteStateMachineBuilder) *[]*Computation {
+func parseComputation(computationString string, lineNumber int, builder *FiniteStateMachineBuilder) []Computation {
 	subComputations := strings.Split(computationString, ",")
-	computations := make([]*Computation, 0, len(subComputations))
+	computations := make([]Computation, 0, len(subComputations))
 	for _, subComputation := range subComputations {
 		subComputation = strings.TrimSpace(subComputation)
 		var computation Computation
@@ -278,7 +274,7 @@ func parseComputation(computationString string, lineNumber int, builder *FiniteS
 			continue
 		}
 		computation.Left = tokens[0]
-		if _, isDeclared := builder.variables.values[computation.Left]; !isDeclared {
+		if _, isDeclared := builder.variables.Get(computation.Left); !isDeclared {
 			plog.Warnf("Bad computation for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, computation.Left)
 			continue
 		}
@@ -299,16 +295,14 @@ func parseComputation(computationString string, lineNumber int, builder *FiniteS
 			continue
 		}
 		computation.Right = tokens[2]
-		computations = append(computations, &computation)
+		computations = append(computations, computation)
 	}
-	return &computations
+	return computations
 }
 
-func parseCondition(conditionString string, lineNumber int, builder *FiniteStateMachineBuilder) *Conditionals {
+func parseCondition(conditionString string, lineNumber int, builder *FiniteStateMachineBuilder) *[]Condition {
 	subConditions := strings.Split(conditionString, ",")
-	conditionals := Conditionals{
-		Conditions: make([]Condition, 0, len(subConditions)),
-	}
+	conditions := make([]Condition, 0, len(subConditions))
 	for _, subCondition := range subConditions {
 		subCondition = strings.TrimSpace(subCondition)
 		tokens := strings.SplitN(subCondition, " ", 3)
@@ -316,7 +310,7 @@ func parseCondition(conditionString string, lineNumber int, builder *FiniteState
 			plog.Warnf("Bad condition for transition on line %d, cannot infer condition (%s) ... skipping", lineNumber+1, subCondition)
 			continue
 		}
-		if _, isDeclared := builder.variables.values[tokens[0]]; !isDeclared {
+		if _, isDeclared := builder.variables.Get(tokens[0]); !isDeclared {
 			plog.Warnf("Bad condition for transition on line %d, variable '%s' is not declared ... skipping", lineNumber+1, tokens[0])
 			continue
 		}
@@ -338,10 +332,9 @@ func parseCondition(conditionString string, lineNumber int, builder *FiniteState
 			plog.Warnf("Bad condition in transition on line %d, invalid symbol (%s) ... skipping", lineNumber+1, tokens[1])
 			continue
 		}
-		condition := NewCondition(tokens[0], symbol, tokens[2], builder.variables.types[tokens[0]])
-		conditionals.Conditions = append(conditionals.Conditions, condition)
+		conditions = append(conditions, NewCondition(tokens[0], symbol, tokens[2], builder.variables.types[tokens[0]]))
 	}
-	return &conditionals
+	return &conditions
 }
 
 func cleanEventString(event string) string {

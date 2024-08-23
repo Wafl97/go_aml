@@ -27,7 +27,7 @@ var (
 
 )
 
-func (symbol LogicSymbol) LSToString() string {
+func (symbol LogicSymbol) String() string {
 	switch symbol {
 	case EQ, EQUAL:
 		return "=="
@@ -46,7 +46,7 @@ func (symbol LogicSymbol) LSToString() string {
 	}
 }
 
-func (symbol ArithmeticSymbol) ASToString() string {
+func (symbol ArithmeticSymbol) String() string {
 	switch symbol {
 	case ASSIGN:
 		return "="

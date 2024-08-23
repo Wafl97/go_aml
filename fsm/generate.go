@@ -24,7 +24,7 @@ func Generate(model *FiniteStateMachine) {
 	os.MkdirAll("srcgen", os.ModeDir)
 
 	generateFile(path.Join("srcgen", "go.mod"), fmt.Sprintf(modFile, GENERATOR_VERSION))
-	generateFile(path.Join("srcgen", model.GetModelName()+".go"), generateCode(model))
+	generateFile(path.Join("srcgen", model.GetModelName()+".go"), GenerateCode(model))
 
 	glog.Info("Generation complete")
 }
@@ -133,9 +133,18 @@ func runAutoEvents(event string) {
 }
 `
 
-func generateCode(model *FiniteStateMachine) string {
+func GenerateCode(model *FiniteStateMachine) string {
 	var variables string
-	for varName, varValue := range model.variables.values {
+	for varName, varValue := range model.variables.ints {
+		variables += fmt.Sprintf("\t%s = %v\n", varName, varValue)
+	}
+	for varName, varValue := range model.variables.floats {
+		variables += fmt.Sprintf("\t%s = %v\n", varName, varValue)
+	}
+	for varName, varValue := range model.variables.bools {
+		variables += fmt.Sprintf("\t%s = %v\n", varName, varValue)
+	}
+	for varName, varValue := range model.variables.strings {
 		variables += fmt.Sprintf("\t%s = %v\n", varName, varValue)
 	}
 	var states string

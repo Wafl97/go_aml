@@ -15,7 +15,7 @@ type (
 )
 
 var (
-	TerminateError error = errors.New("fsm_terminate: model has terminated")
+	ErrTerminated error = errors.New("fsm_terminate: model has terminated")
 )
 
 func NewDeadlockError(cause string) DeadlockError {

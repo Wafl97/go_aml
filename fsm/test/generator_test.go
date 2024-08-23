@@ -14,24 +14,18 @@ func TestGenerateCondition(t *testing.T) {
 	}
 
 	conditions := []fsm.Conditionals{
-		{ // TEST 1
-			Conditions: []fsm.Condition{
-				fsm.NewCondition("a", fsm.EQ, "1", fsm.INT),
-			},
-		},
-		{ // TEST 2
-			Conditions: []fsm.Condition{
-				fsm.NewCondition("a", fsm.GE, "0.5", fsm.FLOAT),
-				fsm.NewCondition("b", fsm.NE, "\"\"", fsm.STRING),
-			},
-		},
-		{ // TEST 3
-			Conditions: []fsm.Condition{
-				fsm.NewCondition("a", fsm.EQ, "false", fsm.BOOL),
-				fsm.NewCondition("b", fsm.EQ, "true", fsm.BOOL),
-				fsm.NewCondition("c", fsm.LE, 5, fsm.INT),
-			},
-		},
+		fsm.NewConditionals([]fsm.Condition{ // TEST 1
+			fsm.NewCondition("a", fsm.EQ, "1", fsm.INT),
+		}, nil),
+		fsm.NewConditionals([]fsm.Condition{ // TEST 2
+			fsm.NewCondition("a", fsm.GE, "0.5", fsm.FLOAT),
+			fsm.NewCondition("b", fsm.NE, "\"\"", fsm.STRING),
+		}, nil),
+		fsm.NewConditionals([]fsm.Condition{ // TEST 3
+			fsm.NewCondition("a", fsm.EQ, "false", fsm.BOOL),
+			fsm.NewCondition("b", fsm.EQ, "true", fsm.BOOL),
+			fsm.NewCondition("c", fsm.LE, 5, fsm.INT),
+		}, nil),
 	}
 
 	for test := 0; test < len(expectedConditionsStrings); test++ {
