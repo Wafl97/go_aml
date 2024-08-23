@@ -1,11 +1,13 @@
 //go:build windows
 
-package main
+package cfg
 
 import (
 	"os"
 	"syscall"
 )
+
+const NEWLINE string = "\r\n"
 
 func init() {
 	stdout := syscall.Handle(os.Stdout.Fd())

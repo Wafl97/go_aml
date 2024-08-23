@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Wafl97/go_aml/cfg"
 	"github.com/Wafl97/go_aml/util/logger"
 )
 
@@ -14,7 +15,7 @@ func FromString(str string) (*FiniteStateMachine, error) {
 	plog = logger.New("PARSER")
 	plog.Info("Building model ...")
 
-	lines := strings.Split(str, "\r\n")
+	lines := strings.Split(str, cfg.NEWLINE)
 
 	builder := NewFsmBuilder()
 	for lineNumber := 0; lineNumber < len(lines); lineNumber++ {

@@ -39,7 +39,7 @@ const (
 )
 
 type Variables struct {
-	ints     map[string]int
+	ints     map[string]int64
 	floats   map[string]float64
 	bools    map[string]bool
 	strings  map[string]string
@@ -49,7 +49,7 @@ type Variables struct {
 
 func NewVariables() Variables {
 	return Variables{
-		ints:    map[string]int{},
+		ints:    map[string]int64{},
 		floats:  map[string]float64{},
 		bools:   map[string]bool{},
 		strings: map[string]string{},
@@ -84,7 +84,7 @@ func (variables *Variables) Set(key string, varType VariableType, value any) {
 	variables.types[key] = varType
 	switch varType {
 	case INT:
-		variables.ints[key] = value.(int)
+		variables.ints[key] = value.(int64)
 	case FLOAT:
 		variables.floats[key] = value.(float64)
 	case BOOL:
