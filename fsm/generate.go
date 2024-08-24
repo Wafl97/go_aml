@@ -8,7 +8,7 @@ import (
 	"github.com/Wafl97/go_aml/util/logger"
 )
 
-const GENERATOR_VERSION = "v0.1.0"
+const GENERATOR_VERSION = "v0.2.0"
 
 var glog logger.Logger
 
