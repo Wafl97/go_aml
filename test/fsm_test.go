@@ -39,7 +39,7 @@ func TestFSM(t *testing.T) {
 }
 
 func TestFullModel(t *testing.T) {
-	logger.SetLogLevel(logger.DEBUG)
+	logger.SetLogLevel("debug")
 	log := logger.New("TESTING")
 	tmb := fsm.NewFsmBuilder()
 	tmb.

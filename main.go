@@ -13,7 +13,8 @@ func main() {
 	filename := flag.String("file", "model.aml", "")
 	logMode := flag.String("log", "warn", "")
 	flag.Parse()
-	logger.SetLogLevelByString(*logMode)
+	logger.SetLogLevel(*logMode)
+	logger.SetLogOut(logger.LogOutToDateFile)
 	log := logger.New("MAIN")
 
 	log.Infof("Loading from %s", *filename)

@@ -1,8 +1,16 @@
 package logger
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"time"
+)
 
-type Level uint8
+type Level struct {
+	order uint8
+	name  string
+	color string
+}
 
 const (
 	reset  = "\u001B[0m"
@@ -12,33 +20,57 @@ const (
 	blue   = "\u001B[34m"
 )
 
-const (
-	OFF   Level = 0
-	ERROR Level = 1
-	WARN  Level = 2
-	INFO  Level = 3
-	DEBUG Level = 4
+var (
+	levelOff   = &Level{0, "OFF", ""}
+	levelError = &Level{1, "ERROR", red}
+	levelWarn  = &Level{2, "WARN", yellow}
+	levelInfo  = &Level{3, "INFO", green}
+	levelDebug = &Level{4, "DEBUG", blue}
 )
 
-var logLevel Level = INFO
+var out func(level *Level, s string) error = LogOutToConsole
 
-func SetLogLevelByString(level string) {
+var LogOutToDateFile func(level *Level, s string) error = func(level *Level, s string) error {
+	file, err := os.OpenFile(time.Now().Format(time.DateOnly)+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("logger out: %w", err)
+	}
+	defer file.Close()
+	_, err = file.WriteString(fmt.Sprintf("[%-5s] %s", level.name, s))
+	if err != nil {
+		return fmt.Errorf("logger out: %w", err)
+	}
+	return nil
+}
+
+var LogOutToConsole func(level *Level, s string) error = func(level *Level, s string) error {
+	fmt.Printf("%s[%-5s] %s%s", level.color, level.name, s, reset)
+	return nil
+}
+
+var logLevelOrder uint8 = levelInfo.order
+
+func SetLogOut(outFunc func(level *Level, s string) error) {
+	out = outFunc
+}
+
+func SetLogLevel(level string) {
 	switch level {
-	case "off":
-		SetLogLevel(OFF)
-	case "error":
-		SetLogLevel(ERROR)
-	case "warn":
-		SetLogLevel(WARN)
-	case "info":
-		SetLogLevel(INFO)
-	case "debug":
-		SetLogLevel(DEBUG)
+	case "off", "OFF":
+		setLogLevel(levelOff)
+	case "error", "ERROR", "err", "ERR":
+		setLogLevel(levelError)
+	case "warn", "WARN", "warning", "WARNING":
+		setLogLevel(levelWarn)
+	case "info", "INFO":
+		setLogLevel(levelInfo)
+	case "debug", "DEBUG":
+		setLogLevel(levelDebug)
 	}
 }
 
-func SetLogLevel(level Level) {
-	logLevel = level
+func setLogLevel(level *Level) {
+	logLevelOrder = level.order
 }
 
 type Logger struct {
@@ -52,49 +84,49 @@ func New(name string) Logger {
 }
 
 func (logger *Logger) Debug(message string) {
-	if logLevel >= DEBUG {
-		fmt.Printf("%s[DEBUG] [%s] %s%s\n", blue, logger.name, message, reset)
+	if logLevelOrder >= levelDebug.order {
+		out(levelDebug, fmt.Sprintf("[%s] %s\n", logger.name, message))
 	}
 }
 
 func (logger *Logger) Debugf(format string, args ...any) {
-	if logLevel >= DEBUG {
-		fmt.Printf("%s[DEBUG] [%s] %s%s\n", blue, logger.name, fmt.Sprintf(format, args...), reset)
+	if logLevelOrder >= levelDebug.order {
+		out(levelDebug, fmt.Sprintf("[%s] %s\n", logger.name, fmt.Sprintf(format, args...)))
 	}
 }
 
 func (logger *Logger) Info(message string) {
-	if logLevel >= INFO {
-		fmt.Printf("%s[INFO ] [%s] %s%s\n", green, logger.name, message, reset)
+	if logLevelOrder >= levelInfo.order {
+		out(levelInfo, fmt.Sprintf("[%s] %s\n", logger.name, message))
 	}
 }
 
 func (logger *Logger) Infof(format string, args ...any) {
-	if logLevel >= INFO {
-		fmt.Printf("%s[INFO ] [%s] %s%s\n", green, logger.name, fmt.Sprintf(format, args...), reset)
+	if logLevelOrder >= levelInfo.order {
+		out(levelInfo, fmt.Sprintf("[%s] %s\n", logger.name, fmt.Sprintf(format, args...)))
 	}
 }
 
 func (logger *Logger) Warn(message string) {
-	if logLevel >= WARN {
-		fmt.Printf("%s[WARN ] [%s] %s%s\n", yellow, logger.name, message, reset)
+	if logLevelOrder >= levelWarn.order {
+		out(levelWarn, fmt.Sprintf("[%s] %s\n", logger.name, message))
 	}
 }
 
 func (logger *Logger) Warnf(format string, args ...any) {
-	if logLevel >= WARN {
-		fmt.Printf("%s[WARN ] [%s] %s%s\n", yellow, logger.name, fmt.Sprintf(format, args...), reset)
+	if logLevelOrder >= levelWarn.order {
+		out(levelWarn, fmt.Sprintf("[%s] %s\n", logger.name, fmt.Sprintf(format, args...)))
 	}
 }
 
 func (logger *Logger) Error(message string) {
-	if logLevel >= ERROR {
-		fmt.Printf("%s[ERROR] [%s] %s%s\n", red, logger.name, message, reset)
+	if logLevelOrder >= levelError.order {
+		out(levelError, fmt.Sprintf("[%s] %s\n", logger.name, message))
 	}
 }
 
 func (logger *Logger) Errorf(format string, args ...any) {
-	if logLevel >= ERROR {
-		fmt.Printf("%s[ERROR] [%s] %s%s\n", red, logger.name, fmt.Sprintf(format, args...), reset)
+	if logLevelOrder >= levelError.order {
+		out(levelError, fmt.Sprintf("[%s] %s\n", logger.name, fmt.Sprintf(format, args...)))
 	}
 }
